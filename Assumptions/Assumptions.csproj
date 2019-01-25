@@ -2,6 +2,22 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackOnBuild>true</PackOnBuild>
+    <PackageId>BrokenArrow</PackageId>
+    <PackageVersion>1.0.0.0</PackageVersion>
+    <Authors>David Brandt</Authors>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <PackageLicenseUrl>http://unlicense.org/</PackageLicenseUrl>
+    <Owners>David Brandt</Owners>
+    <PackageProjectUrl>https://github.com/padresmurfa/broken_arrow</PackageProjectUrl>
+    <PackageReleaseNotes>Initial version of the broken arrow library, intended to make explicit assumptions in C#</PackageReleaseNotes>
+    <Summary>The Assumptions libraries provides a method to make implicit assumptions explicit in C#</Summary>
+    <PackageTags>broken assumptions assert debug runtime contract</PackageTags>
+    <Title>Broken Arrow</Title>
+    <Description>The Assumptions libraries provides a method to make implicit assumptions explicit in C#</Description>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.0" />
+  </ItemGroup>
 </Project>

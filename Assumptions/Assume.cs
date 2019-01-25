@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Assumptions
+namespace BrokenArrow
 {
     public class Assume
     {
