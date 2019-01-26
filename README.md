@@ -18,10 +18,6 @@ You do not have to explain yourself, much less create a new return code or excep
 
 Simply describe your assumption, informing future developers of the edge case and trust that the assumption engine will throw an exception if the assumption fails.
 
-## TODO
-
-More documentation and features pending.
-
 ### Examples
 
 ```C#
@@ -50,3 +46,7 @@ void Blat()
         Is.True();
 }
 ```
+
+## Usage
+
+Please refer to the unit tests for details.  More documentation is pending.

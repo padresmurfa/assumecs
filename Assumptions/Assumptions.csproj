@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageVersion>1.1.0</PackageVersion>
+    <PackageVersion>1.1.0.1</PackageVersion>
     <Authors>David Brandt</Authors>
     <NeutralLanguage>en-EN</NeutralLanguage>
     <PackageLicenseUrl>http://unlicense.org/</PackageLicenseUrl>
     <Owners>David Brandt</Owners>
     <PackageProjectUrl>https://github.com/padresmurfa/assumptions</PackageProjectUrl>
-    <PackageReleaseNotes>This is the initial as-intended interface.  Documentation pending.</PackageReleaseNotes>
+    <PackageReleaseNotes>This version adds unit testing, plugs some holes, and adds the Equal method.</PackageReleaseNotes>
     <Summary>The Assumptions library provides a clean method to make implicit assumptions explicit in C#.</Summary>
     <PackageTags>assumptions assume assert implicit explicit code quality testing</PackageTags>
     <Title>Assumptions</Title>
