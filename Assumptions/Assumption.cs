@@ -32,7 +32,7 @@ namespace Assumptions
 
                 Expression = (expected, actual) =>
                 {
-                    var comparison = ((IComparable)expected).CompareTo(actual);
+                    var comparison = ((IComparable)actual).CompareTo(expected);
 
                     if (comparison < 0) return null;
 
@@ -54,7 +54,7 @@ namespace Assumptions
 
                 Expression = (expected, actual) =>
                 {
-                    var comparison = ((IComparable)expected).CompareTo(actual);
+                    var comparison = ((IComparable)actual).CompareTo(expected);
 
                     if (comparison > 0) return null;
 
@@ -76,13 +76,13 @@ namespace Assumptions
 
                 Expression = (expected, actual) =>
                 {
-                    var comparison = ((IComparable)expected).CompareTo(actual);
+                    var comparison = ((IComparable)actual).CompareTo(expected);
 
                     if (comparison <= 0) return null;
 
                     return () =>
                     {
-                        return $"Expected {this.ActualName} ({actual}) to be less than or equal to {this.ExpectedName} ({expected})";
+                        return $"Expected {this.ActualName} ({actual}) to be less than, or equal to, {this.ExpectedName} ({expected})";
                     };
                 };
 
@@ -98,13 +98,13 @@ namespace Assumptions
 
                 Expression = (expected, actual) =>
                 {
-                    var comparison = ((IComparable)expected).CompareTo(actual);
+                    var comparison = ((IComparable)actual).CompareTo(expected);
 
                     if (comparison >= 0) return null;
 
                     return () =>
                     {
-                        return $"Expected {this.ActualName} ({actual}) to be greater or equal to {this.ExpectedName} ({expected})";
+                        return $"Expected {this.ActualName} ({actual}) to be greater than, or equal to, {this.ExpectedName} ({expected})";
                     };
                 };
 
@@ -112,18 +112,37 @@ namespace Assumptions
             }
         }
 
+        public Assumption Equal
+        {
+            get
+            {
+                IsEquatable = true;
+
+                Expression = (expected, actual) =>
+                {
+                    if (actual.Equals(expected)) return null;
+
+                    return () =>
+                    {
+                        return $"Expected {this.ActualName} ({actual}) to be equal to {this.ExpectedName} ({expected})";
+                    };
+                };
+
+                return this;
+            }
+        }
+        
         public Assumption False()
         {
             IsEquatable = true;
 
             Expression = (expected, actual) =>
             {
-
                 if (actual.Equals(expected)) return null;
 
                 return () =>
                 {
-                    return $"Expected {this.ActualName} ({actual}) to be false";
+                    return $"Expected {this.ActualName} ({actual}) to be False";
                 };
             };
 
@@ -138,13 +157,11 @@ namespace Assumptions
 
             Expression = (expected, actual) =>
             {
-                var comparison = ((IComparable)expected).CompareTo(actual);
-
                 if (actual.Equals(expected)) return null;
 
                 return () =>
                 {
-                    return $"Expected {this.ActualName} ({actual}) to be true";
+                    return $"Expected {this.ActualName} ({actual}) to be True";
                 };
             };
 
@@ -157,7 +174,6 @@ namespace Assumptions
         {
             Expression = (expected, actual) =>
             {
-
                 if (actual == null) return null;
 
                 return () =>
@@ -175,12 +191,11 @@ namespace Assumptions
         {
             Expression = (expected, actual) =>
             {
-
                 if (actual != null) return null;
 
                 return () =>
                 {
-                    return $"Expected {this.ActualName} ({actual}) to not be null";
+                    return $"Expected {this.ActualName} ({actual ?? "<null>"}) to not be null";
                 };
             };
 

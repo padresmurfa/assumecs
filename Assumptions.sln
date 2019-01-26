@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{EA03FA84-80E6-44F2-88F9-0447C752313A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,5 +21,9 @@ Global
 		{FE171FEE-5551-4FD9-99AE-6209461D66A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE171FEE-5551-4FD9-99AE-6209461D66A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE171FEE-5551-4FD9-99AE-6209461D66A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA03FA84-80E6-44F2-88F9-0447C752313A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA03FA84-80E6-44F2-88F9-0447C752313A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA03FA84-80E6-44F2-88F9-0447C752313A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA03FA84-80E6-44F2-88F9-0447C752313A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
