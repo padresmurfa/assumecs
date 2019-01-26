@@ -13,6 +13,8 @@
     <PackageTags>assumptions assume assert implicit explicit code quality testing</PackageTags>
     <Title>Assumptions</Title>
     <Description>The Assumptions library provides a clean method to make implicit assumptions explicit in C#.</Description>
+    <PackageId>Assumptions</PackageId>
+    <PackOnBuild>true</PackOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
