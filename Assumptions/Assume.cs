@@ -1,137 +1,36 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
-namespace BrokenArrow
+namespace Assumptions
 {
-    public class Assume
+    public static class Assume
     {
-        public static void Fail(string message = null)
+        public static Assumption That(
+            object actual,
+            string actualName = null,
+            [CallerMemberName] string callerMemberName = "",
+            [CallerFilePath] string callerSourceFilePath = "",
+            [CallerLineNumber] int callerSourceLineNumber = 0)
         {
-            throw new AssumptionFailure(message ?? "Assumption failure: Explicit failure was triggered");
+            return new Assumption(actual, actualName, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
         }
         
-        public static void Unreachable(string message = null)
+        public static void Unreachable(
+            string message = null,
+            Exception innerException = null,
+            [CallerMemberName] string callerMemberName = "",
+            [CallerFilePath] string callerSourceFilePath = "",
+            [CallerLineNumber] int callerSourceLineNumber = 0)
         {
-            throw new AssumptionFailure(message ?? "Assumption failure: This code was supposed to be unreachable");
-        }
-        
-        public static void IsTrue(bool value, string message = null)
-        {
-            if (value != true)
+            if (message == null)
             {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{value}' to be true, but was false");
+                message = "";
             }
-        }
-        
-        public static void IsTrue(bool? value, string message = null)
-        {
-            if (value == null || value != true)
+            else
             {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{value}' to be true, but was false");
+                message = ".  Explanation: " + message;
             }
-        }
-        
-        public static void IsFalse(bool? value, string message = null)
-        {
-            if (value == null || value != false)
-            {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{value}' to be false, but was true");
-            }
-        }
-
-        public static void IsFalse(bool value, string message = null)
-        {
-            if (value != false)
-            {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{value}' to be false, but was true");
-            }
-        }
-        
-        public static void AreEqual<T>(IEquatable<T> expected, IEquatable<T> actual, string message = null)
-        {
-            if (expected != null && actual != null)
-            {
-                if (!expected.Equals(actual))
-                {
-                    throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{actual}' to be equal to {actual}");
-                }
-            }
-            else if (expected != null || actual != null)
-            {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{actual}' to be equal to {actual}");
-            }
-        }
-
-        public static void AreEqual<T>(T? expected, T? actual, string message = null)
-            where T : struct, IEquatable<T>
-        {
-            if (expected != null && actual != null)
-            {
-                if (!expected.Equals(actual))
-                {
-                    throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{actual}' to be equal to {actual}");
-                }
-            }
-            else if (expected != null || actual != null)
-            {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{actual}' to be equal to {actual}");
-            }
-        }
-        
-        public static void AreNotEqual<T>(IEquatable<T> expected, IEquatable<T> actual, string message = null)
-        {
-            if (expected == null && actual == null)
-            {
-                return;
-            }
-            
-            if (expected != null && actual != null)
-            {
-                if (expected.Equals(actual))
-                {
-                    throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{actual}' to not be equal to {actual}");
-                }
-            }
-            else if (expected == null && actual == null)
-            {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{actual}' to not be equal to {actual}");
-            }
-        }
-        
-        public static void AreNotEqual<T>(T? expected, T? actual, string message = null)
-            where T : struct, IEquatable<T>
-        {
-            if (expected == null && actual == null)
-            {
-                return;
-            }
-            
-            if (expected != null && actual != null)
-            {
-                if (expected.Equals(actual))
-                {
-                    throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{actual}' to not be equal to {actual}");
-                }
-            }
-            else if (expected == null && actual == null)
-            {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{actual}' to not be equal to {actual}");
-            }
-        }
-        
-        public static void IsNull<T>(Nullable<T> value, string message = null) where T : struct
-        {
-            if (value.HasValue)
-            {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{value}' to be null");
-            }
-        }
-        
-        public static void IsNotNull<T>(Nullable<T> value, string message = null) where T : struct
-        {
-            if (!value.HasValue)
-            {
-                throw new AssumptionFailure(message ?? $"Assumption failure: Expected '{value}' to not be null");
-            }
+            throw new AssumptionFailure("Expected this code to be unreachable" + message, innerException, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
         }
     }
 }
