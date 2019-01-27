@@ -1,6 +1,6 @@
 # Assumptions
 
-The Assumptions library provides a clean method to make implicit assumptions explicit in C#.
+The Assumptions library provides a clean method to turn implicit assumptions into explicit ones in C#.
 
 ## Why?
 
