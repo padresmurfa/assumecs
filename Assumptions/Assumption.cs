@@ -6,6 +6,11 @@ namespace Assumptions
     {
         public Assumption Than(object expected, string name = null)
         {
+            if (isNot)
+            {
+                throw new BadGrammar("Not must be specified before a logical operator, not before a terminator");
+            }
+        
             Expected = expected;
 
             ExpectedGivenName = name;
@@ -23,24 +28,55 @@ namespace Assumptions
         }
 
         public Assumption Is => this;
+        
+        public Assumption Not
+        {
+            get
+            {
+                isNot = true;
+                
+                return this;
+            }
+        }
 
         public Assumption Less
         {
             get
             {
                 IsComparable = true;
-
-                Expression = (expected, actual) =>
+                
+                IsExpressionClosed = true;
+                
+                if (this.isNot)
                 {
-                    var comparison = ((IComparable)actual).CompareTo(expected);
-
-                    if (comparison < 0) return null;
-
-                    return () =>
+                    Expression = (expected, actual) =>
                     {
-                        return $"Expected {this.ActualName} ({actual}) to be less than {this.ExpectedName} ({expected})";
+                        var comparison = ((IComparable)actual).CompareTo(expected);
+                    
+                        if (comparison >= 0) return null;
+
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to not be less than {this.ExpectedName} ({expected})";
+                        };
                     };
-                };
+
+                    isNot = false;
+                }
+                else
+                {
+                    Expression = (expected, actual) =>
+                    {
+                        var comparison = ((IComparable)actual).CompareTo(expected);
+                        
+                        if (comparison < 0) return null;
+    
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to be less than {this.ExpectedName} ({expected})";
+                        };
+                    };
+                }
 
                 return this;
             }
@@ -51,62 +87,125 @@ namespace Assumptions
             get
             {
                 IsComparable = true;
-
-                Expression = (expected, actual) =>
+                
+                IsExpressionClosed = true;
+                
+                if (isNot)
                 {
-                    var comparison = ((IComparable)actual).CompareTo(expected);
-
-                    if (comparison > 0) return null;
-
-                    return () =>
+                    Expression = (expected, actual) =>
                     {
-                        return $"Expected {this.ActualName} ({actual}) to be greater than {this.ExpectedName} ({expected})";
+                        var comparison = ((IComparable)actual).CompareTo(expected);
+    
+                        if (comparison <= 0) return null;
+    
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to not be greater than {this.ExpectedName} ({expected})";
+                        };
                     };
-                };
+                    
+                    isNot = false;
+                }
+                else
+                {
+                    Expression = (expected, actual) =>
+                    {
+                        var comparison = ((IComparable)actual).CompareTo(expected);
+    
+                        if (comparison > 0) return null;
+    
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to be greater than {this.ExpectedName} ({expected})";
+                        };
+                    };
+                }
 
                 return this;
             }
         }
 
-        public Assumption LessOrEqual
+        public Assumption LessThanOrEqual
         {
             get
             {
                 IsComparable = true;
+                
+                IsExpressionClosed = true;
 
-                Expression = (expected, actual) =>
+                if (isNot)
                 {
-                    var comparison = ((IComparable)actual).CompareTo(expected);
-
-                    if (comparison <= 0) return null;
-
-                    return () =>
+                    Expression = (expected, actual) =>
                     {
-                        return $"Expected {this.ActualName} ({actual}) to be less than, or equal to, {this.ExpectedName} ({expected})";
+                        var comparison = ((IComparable)actual).CompareTo(expected);
+    
+                        if (comparison > 0) return null;
+    
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to not be less than, or equal to, {this.ExpectedName} ({expected})";
+                        };
                     };
-                };
+                    
+                    isNot = false;
+                }
+                else
+                {
+                    Expression = (expected, actual) =>
+                    {
+                        var comparison = ((IComparable)actual).CompareTo(expected);
+    
+                        if (comparison <= 0) return null;
+    
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to be less than, or equal to, {this.ExpectedName} ({expected})";
+                        };
+                    };
+                }
 
                 return this;
             }
         }
 
-        public Assumption GreaterOrEqual
+        public Assumption GreaterThanOrEqual
         {
             get
             {
                 IsComparable = true;
+                
+                IsExpressionClosed = true;
 
-                Expression = (expected, actual) =>
+                if (isNot)
                 {
-                    var comparison = ((IComparable)actual).CompareTo(expected);
-
-                    if (comparison >= 0) return null;
-
-                    return () =>
+                    Expression = (expected, actual) =>
                     {
-                        return $"Expected {this.ActualName} ({actual}) to be greater than, or equal to, {this.ExpectedName} ({expected})";
+                        var comparison = ((IComparable)actual).CompareTo(expected);
+    
+                        if (comparison < 0) return null;
+    
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to not be greater than, or equal to, {this.ExpectedName} ({expected})";
+                        };
                     };
-                };
+                    
+                    isNot = false;
+                }
+                else
+                {
+                    Expression = (expected, actual) =>
+                    {
+                        var comparison = ((IComparable)actual).CompareTo(expected);
+    
+                        if (comparison >= 0) return null;
+    
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to be greater than, or equal to, {this.ExpectedName} ({expected})";
+                        };
+                    };
+                }
 
                 return this;
             }
@@ -118,15 +217,34 @@ namespace Assumptions
             {
                 IsEquatable = true;
 
-                Expression = (expected, actual) =>
-                {
-                    if (actual.Equals(expected)) return null;
+                IsExpressionClosed = true;
 
-                    return () =>
+                if (isNot)
+                {
+                    Expression = (expected, actual) =>
                     {
-                        return $"Expected {this.ActualName} ({actual}) to be equal to {this.ExpectedName} ({expected})";
+                        if (!actual.Equals(expected)) return null;
+    
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to not be equal to {this.ExpectedName} ({expected})";
+                        };
                     };
-                };
+                    
+                    isNot = false;
+                }
+                else
+                {
+                    Expression = (expected, actual) =>
+                    {
+                        if (actual.Equals(expected)) return null;
+    
+                        return () =>
+                        {
+                            return $"Expected {this.ActualName} ({actual}) to be equal to {this.ExpectedName} ({expected})";
+                        };
+                    };
+                }
 
                 return this;
             }
@@ -135,16 +253,34 @@ namespace Assumptions
         public Assumption False()
         {
             IsEquatable = true;
-
-            Expression = (expected, actual) =>
+            
+            IsExpressionClosed = true;
+            
+            if (isNot)
             {
-                if (actual.Equals(expected)) return null;
-
-                return () =>
+                Expression = (expected, actual) =>
                 {
-                    return $"Expected {this.ActualName} ({actual}) to be False";
+                    if (!actual.Equals(expected)) return null;
+    
+                    return () =>
+                    {
+                        return $"Expected {this.ActualName} ({actual}) to not be False";
+                    };
                 };
-            };
+                isNot = false;
+            }
+            else
+            {
+                Expression = (expected, actual) =>
+                {
+                    if (actual.Equals(expected)) return null;
+    
+                    return () =>
+                    {
+                        return $"Expected {this.ActualName} ({actual}) to be False";
+                    };
+                };
+            }
 
             this.To(false, "false");
 
@@ -155,15 +291,34 @@ namespace Assumptions
         {
             IsEquatable = true;
 
-            Expression = (expected, actual) =>
+            IsExpressionClosed = true;
+            
+            if (isNot)
             {
-                if (actual.Equals(expected)) return null;
-
-                return () =>
+                Expression = (expected, actual) =>
                 {
-                    return $"Expected {this.ActualName} ({actual}) to be True";
+                    if (!actual.Equals(expected)) return null;
+    
+                    return () =>
+                    {
+                        return $"Expected {this.ActualName} ({actual}) to not be True";
+                    };
                 };
-            };
+                
+                isNot = false;
+            }
+            else
+            {
+                Expression = (expected, actual) =>
+                {
+                    if (actual.Equals(expected)) return null;
+    
+                    return () =>
+                    {
+                        return $"Expected {this.ActualName} ({actual}) to be True";
+                    };
+                };
+            }
 
             this.To(true, "true");
 
@@ -172,38 +327,40 @@ namespace Assumptions
 
         public Assumption Null()
         {
-            Expression = (expected, actual) =>
+            IsExpressionClosed = true;
+                
+            if (isNot)
             {
-                if (actual == null) return null;
-
-                return () =>
+                Expression = (expected, actual) =>
                 {
-                    return $"Expected {this.ActualName} ({actual}) to be null";
+                    if (actual != null) return null;
+    
+                    return () =>
+                    {
+                        return $"Expected {this.ActualName} (<null>) to not be null";
+                    };
                 };
-            };
+                
+                isNot = false;
+            }
+            else
+            {
+                Expression = (expected, actual) =>
+                {
+                    if (actual == null) return null;
+    
+                    return () =>
+                    {
+                        return $"Expected {this.ActualName} ({actual}) to be null";
+                    };
+                };
+            }
 
             this.To(null, "null");
 
             return this;
         }
 
-        public Assumption NotNull()
-        {
-            Expression = (expected, actual) =>
-            {
-                if (actual != null) return null;
-
-                return () =>
-                {
-                    return $"Expected {this.ActualName} ({actual ?? "<null>"}) to not be null";
-                };
-            };
-
-            this.To(this, "not null");
-
-            return this;
-        }
-        
         // INTERNALS
         
         public Assumption(object actual, string actualName, string callerMemberName, string callerSourceFilePath, int callerSourceLineNumber)
@@ -230,6 +387,27 @@ namespace Assumptions
         private string ExpectedGivenName;
 
         private Func<object, object, Func<string>> Expression;
+
+        private bool isNot;
+        
+        private bool isExpressionClosed;
+        private bool IsExpressionClosed
+        {
+            get
+            {
+                return this.isExpressionClosed;
+            }
+            
+            set
+            {
+                if (this.isExpressionClosed && value)
+                {
+                    throw new BadGrammar("The logical expression has already been closed.  Only one operator can be used per expression.");
+                }
+                
+                this.isExpressionClosed = value;
+            }
+        }
 
         private bool isEquatable;
         private bool IsEquatable

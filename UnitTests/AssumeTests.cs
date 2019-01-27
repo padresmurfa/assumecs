@@ -12,7 +12,8 @@ namespace UnitTests
             try
             {
                 Assume.Unreachable("UnreachableCode"); // line number: 14
-                Assert.False(true);
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {

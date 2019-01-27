@@ -11,13 +11,15 @@ namespace UnitTests
         {
             Assume.
                 That("actual").
-                Equal.To("actual");
+                Is.Equal.To("actual");
                 
             try
             {
                 Assume.
                     That("actual").
-                    Equal.To("notactual");
+                    Is.Equal.To("notactual");
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
@@ -38,13 +40,15 @@ namespace UnitTests
         {
             Assume.
                 That(1).
-                Less.Than(2);
+                Is.Less.Than(2);
                 
             try
             {
                 Assume.
                     That(1).
-                    Less.Than(1);
+                    Is.Less.Than(1);
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
@@ -55,7 +59,9 @@ namespace UnitTests
             {
                 Assume.
                     That(2).
-                    Less.Than(1);
+                    Is.Less.Than(1);
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
@@ -68,17 +74,19 @@ namespace UnitTests
         {
             Assume.
                 That(1).
-                LessOrEqual.To(2);
+                Is.LessThanOrEqual.To(2);
                 
             Assume.
                 That(1).
-                LessOrEqual.To(1);
+                Is.LessThanOrEqual.To(1);
             
             try
             {
                 Assume.
                     That(2).
-                    LessOrEqual.To(1);
+                    Is.LessThanOrEqual.To(1);
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
@@ -91,13 +99,15 @@ namespace UnitTests
         {
             Assume.
                 That(2).
-                Greater.Than(1);
+                Is.Greater.Than(1);
                 
             try
             {
                 Assume.
                     That(1).
-                    Greater.Than(1);
+                    Is.Greater.Than(1);
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
@@ -108,7 +118,9 @@ namespace UnitTests
             {
                 Assume.
                     That(1).
-                    Greater.Than(2);
+                    Is.Greater.Than(2);
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
@@ -121,17 +133,19 @@ namespace UnitTests
         {
             Assume.
                 That(2).
-                GreaterOrEqual.To(1);
+                Is.GreaterThanOrEqual.To(1);
                 
             Assume.
                 That(1).
-                GreaterOrEqual.To(1);
+                Is.GreaterThanOrEqual.To(1);
             
             try
             {
                 Assume.
                     That(1).
-                    GreaterOrEqual.To(2);
+                    Is.GreaterThanOrEqual.To(2);
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
@@ -151,6 +165,8 @@ namespace UnitTests
                 Assume.
                     That(false).
                     Is.True();
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
@@ -170,6 +186,8 @@ namespace UnitTests
                 Assume.
                     That(true).
                     Is.False();
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
@@ -189,40 +207,13 @@ namespace UnitTests
                 Assume.
                     That("asdf").
                     Is.Null();
+
+                throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
                 Assert.Equal("Expected actualValue (asdf) to be null", ex.Message);
             }
-        }
-        
-        [Fact]
-        public void NotNull()
-        {
-            Assume.
-                That("asdf").
-                Is.NotNull();
-                
-            try
-            {
-                Assume.
-                    That(null).
-                    Is.NotNull();
-            }
-            catch (AssumptionFailure ex)
-            {
-                Assert.Equal("Expected actualValue (<null>) to not be null", ex.Message);
-            }
-        }
-        
-        [Fact(Skip = "Not yet implemented")]
-        public void CanUseNot()
-        {
-            /*
-            Assume.
-                That(true).
-                Is.Not.False(false);
-            */
         }
         
         [Fact(Skip = "Not yet implemented")]
