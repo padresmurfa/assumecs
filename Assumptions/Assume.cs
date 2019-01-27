@@ -15,6 +15,16 @@ namespace Assumptions
             return new Assumption(actual, actualName, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
         }
         
+        public static Assumption That(
+            Action actual,
+            string actualName = null,
+            [CallerMemberName] string callerMemberName = "",
+            [CallerFilePath] string callerSourceFilePath = "",
+            [CallerLineNumber] int callerSourceLineNumber = 0)
+        {
+            return new Assumption(actual, actualName, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+        }
+        
         public static void Unreachable(
             string message = null,
             Exception innerException = null,

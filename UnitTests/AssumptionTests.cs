@@ -216,22 +216,129 @@ namespace UnitTests
             }
         }
         
-        [Fact(Skip = "Not yet implemented")]
-        public void CanUseThrows()
+        [Fact]
+        public void InstanceOf()
         {
-            /*
-            Assume.
-                That(()=>{
-                    throw new Exception("asdf");
-                }).
-                Throws(typeof(Exception));
+            Assume.That(new Exception()).Is.InstanceOf(typeof(Exception));
+            
+            Assume.That(new AssumptionFailure("asdf",null,"mem","pat",1)).Is.InstanceOf(typeof(Exception));
+            
+            try
+            {
+                Assume.That(1).Is.InstanceOf(typeof(Exception));
+
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal($"Expected actualValue (System.Int32) to be derived from System.Exception", ex.Message);
+            }
+            
+            
+            Assume.That(1).Is.InstanceOf(typeof(Exception),typeof(Int32));
+            
+            try
+            {
+                Assume.That(1).Is.InstanceOf(typeof(Exception),typeof(Decimal));
                 
-            Assume.
-                That(()=>{
-                    throw new Exception("asdf");
-                }).
-                DoesNot.Throw();
-            */
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal($"Expected actualValue (System.Int32) to be derived from one of the following: System.Exception, System.Decimal", ex.Message);
+            }
+            
+        }
+        
+        [Fact]
+        public void CanMakeAssumptionsAboutExceptionHandling()
+        {
+            try
+            {
+                throw new NotSupportedException("bork");
+            }
+            catch (Exception ex)
+            {
+                Assume.That(ex).Is.InstanceOf(typeof(NotSupportedException), typeof(AssumptionFailure));
+            }
+            
+            try
+            {
+                Assume.That(true).Is.False();
+
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (Exception ex)
+            {
+                Assume.That(ex).Is.InstanceOf(typeof(NotSupportedException), typeof(AssumptionFailure));
+            }
+            
+            try
+            {
+                throw new NotSupportedException("bork");
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    Assume.That(ex).Is.InstanceOf(typeof(AssumptionFailure));
+                    
+                    throw new Exception("Assumption was not thrown");
+                }
+                catch (AssumptionFailure ex2)
+                {
+                    Assert.Equal("Expected actualValue (System.NotSupportedException) to be derived from Assumptions.AssumptionFailure", ex2.Message);
+                }
+            }
+        }
+        
+        [Fact]
+        public void CanMakeAssumptionsAboutThrowingExceptions()
+        {
+            Assume.That(() => {
+                var i = 0;
+                i++;
+            }).Completed();
+            
+            try
+            {
+                Assume.That(() => {
+                    throw new Exception("foo");
+                }).Completed();
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("Expected actualValue to run to completion without raising an exception", ex.Message);
+            }
+            
+            try
+            {
+                Assume.That(() => {
+                    throw new Exception("foo");
+                }).Not.Completed();
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (Exception ex)
+            {
+                Assert.Equal("foo", ex.Message);
+            }
+            
+            try
+            {
+                Assume.That(() => {
+                    var i = 0;
+                    i++;
+                }).Not.Completed();
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("Expected actualValue to raise an exception before running to completion", ex.Message);
+            }
         }
     }
 }

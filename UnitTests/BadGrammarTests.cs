@@ -41,7 +41,7 @@ namespace UnitTests
             Assume.That(1).Less.To(2);
         }
 
-        [Fact(Skip = "Haven't found a way to implement this, syntactically")]
+        [Fact(Skip = "Haven't found a way to implement this test, syntactically")]
         public void DanglingComparator()
         {
             try

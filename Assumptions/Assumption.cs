@@ -7,6 +7,16 @@ namespace Assumptions
     {
         public Assumption Than(object expected, string name = null)
         {
+            void Evaluate()
+            {
+                var failureReasonFactory = this.Expression(this.Expected, this.Actual);
+                if (failureReasonFactory != null)
+                {
+                    var failureReason = failureReasonFactory();
+                    throw CreateAssumptionFailure(failureReason);
+                }
+            }
+            
             if (isInvertedAssumption)
             {
                 throw new BadGrammar("Not must be specified before a logical operator, not before a terminator");
@@ -159,14 +169,27 @@ namespace Assumptions
         
         public Assumption InstanceOf(params Type[] types)
         {
+            string InstanceOfHelperTypeNames(object expected)
+            {
+                var et = (Type[])expected;
+                
+                if (et.Count() == 1)
+                {
+                    return $"{et[0].FullName}";
+                }
+                var typeNames = string.Join(", ", et.Select(t => t.FullName));
+                
+                return $"one of the following: {typeNames}";
+            }
+            
             var inverted = this.CloseExpression();
             
             Expression = (expected, actual) => {
                 return Check(
-                    ((Type[])expected).Any(type => type.IsAssignableFrom((Type)actual)),
+                    ((Type[])expected).Any(type => type.IsAssignableFrom(actual.GetType())),
                     inverted,
-                    () => $"Expected {this.ActualName} ({((Type)actual).FullName}) to be derived from one of the following: {string.Join(", ", ((Type[])expected).Select(t => t.FullName))}",
-                    () => $"Expected {this.ActualName} ({((Type)actual).FullName}) to not be derived from any of the following: {string.Join(", ", ((Type[])expected).Select(t => t.FullName))}"
+                    () => $"Expected {this.ActualName} ({((Type)actual.GetType()).FullName}) to be derived from {InstanceOfHelperTypeNames(expected)}",
+                    () => $"Expected {this.ActualName} ({((Type)actual.GetType()).FullName}) to not be derived from {InstanceOfHelperTypeNames(expected)}"
                 );
             };
 
@@ -174,7 +197,7 @@ namespace Assumptions
 
             return this;
         }
-
+        
         public Assumption Null()
         {
             var inverted = this.CloseExpression();
@@ -190,6 +213,46 @@ namespace Assumptions
 
             return this;
         }
+
+        public Assumption Completed()
+        {
+            var inverted = this.CloseExpression();
+            
+            Expression = (expected, actual) =>
+            {
+                Assume.That(actual).Is.InstanceOf(typeof(Action));
+
+                if (inverted)
+                {
+                    try
+                    {
+                        ((Action)actual)();
+                        throw CreateAssumptionFailure($"Expected {this.ActualName} to raise an exception before running to completion");
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        ((Action)actual)();
+                        return null;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw CreateAssumptionFailure($"Expected {this.ActualName} to run to completion without raising an exception", ex);
+                    }
+                }
+            };
+            
+            this.To(null, "completed");
+
+            return this;
+        }
+
 
         // INTERNALS
         
@@ -276,38 +339,38 @@ namespace Assumptions
 
         private void VerifyAssumptionIntegrity()
         {
+            void VerifyAssumptionIntegrityEquatability()
+            {
+                if (this.isEquatable)
+                {
+                    if (this.Actual != null && !Equatable(this.Actual))
+                    {
+                        throw CreateAssumptionFailure($"'{this.ActualName}' must be equatable");
+                    }
+                    if (this.Expected != null && !Equatable(this.Expected))
+                    {
+                        throw CreateAssumptionFailure($"'{this.ExpectedName}' must be equatable");
+                    }
+                }
+            }
+    
+            void VerifyAssumptionIntegrityComparability()
+            {
+                if (this.isComparable)
+                {
+                    if (this.Actual != null && !Comparable(this.Actual))
+                    {
+                        throw CreateAssumptionFailure($"'{this.ActualName}' must be comparable");
+                    }
+                    if (this.Expected != null && !Comparable(this.Expected))
+                    {
+                        throw CreateAssumptionFailure($"'{this.ExpectedName}' must be comparable");
+                    }
+                }
+            }
+        
             VerifyAssumptionIntegrityComparability();
             VerifyAssumptionIntegrityEquatability();
-        }
-
-        private void VerifyAssumptionIntegrityEquatability()
-        {
-            if (this.isEquatable)
-            {
-                if (this.Actual != null && !Equatable(this.Actual))
-                {
-                    throw CreateAssumptionFailure($"'{this.ActualName}' must be equatable");
-                }
-                if (this.Expected != null && !Equatable(this.Expected))
-                {
-                    throw CreateAssumptionFailure($"'{this.ExpectedName}' must be equatable");
-                }
-            }
-        }
-
-        private void VerifyAssumptionIntegrityComparability()
-        {
-            if (this.isComparable)
-            {
-                if (this.Actual != null && !Comparable(this.Actual))
-                {
-                    throw CreateAssumptionFailure($"'{this.ActualName}' must be comparable");
-                }
-                if (this.Expected != null && !Comparable(this.Expected))
-                {
-                    throw CreateAssumptionFailure($"'{this.ExpectedName}' must be comparable");
-                }
-            }
         }
 
         private bool Comparable(object o)
@@ -318,16 +381,6 @@ namespace Assumptions
         private bool Equatable(object o)
         {
             return true;
-        }
-
-        private void Evaluate()
-        {
-            var failureReasonFactory = this.Expression(this.Expected, this.Actual);
-            if (failureReasonFactory != null)
-            {
-                var failureReason = failureReasonFactory();
-                throw CreateAssumptionFailure(failureReason);
-            }
         }
     }
 }
