@@ -23,7 +23,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (actual) to be equal to expectedValue (notactual)", ex.Message);
+                Assert.Equal("Expected 'actual' to be equal to 'notactual'", ex.Message);
             }
         }
         
@@ -52,7 +52,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (1) to be less than expectedValue (1)", ex.Message);
+                Assert.Equal("Expected '1' to be less than '1'", ex.Message);
             }
             
             try
@@ -65,7 +65,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (2) to be less than expectedValue (1)", ex.Message);
+                Assert.Equal("Expected '2' to be less than '1'", ex.Message);
             }
         }
         
@@ -90,7 +90,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (2) to be less than, or equal to, expectedValue (1)", ex.Message);
+                Assert.Equal("Expected '2' to be less than or equal to '1'", ex.Message);
             }
         }
         
@@ -111,7 +111,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (1) to be greater than expectedValue (1)", ex.Message);
+                Assert.Equal("Expected '1' to be greater than '1'", ex.Message);
             }
             
             try
@@ -124,7 +124,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (1) to be greater than expectedValue (2)", ex.Message);
+                Assert.Equal("Expected '1' to be greater than '2'", ex.Message);
             }
         }
         
@@ -149,7 +149,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (1) to be greater than, or equal to, expectedValue (2)", ex.Message);
+                Assert.Equal("Expected '1' to be greater than or equal to '2'", ex.Message);
             }
         }
         
@@ -170,7 +170,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (False) to be True", ex.Message);
+                Assert.Equal("Expected <false> to be <true>", ex.Message);
             }
         }
         
@@ -191,7 +191,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (True) to be False", ex.Message);
+                Assert.Equal("Expected <true> to be <false>", ex.Message);
             }
         }
         
@@ -212,7 +212,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (asdf) to be null", ex.Message);
+                Assert.Equal("Expected 'asdf' to be <null>", ex.Message);
             }
         }
         
@@ -231,21 +231,21 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal($"Expected actualValue (System.Int32) to be derived from System.Exception", ex.Message);
+                Assert.Equal($"Expected System.Int32 to be derived from System.Exception", ex.Message);
             }
             
             
-            Assume.That(1).Is.InstanceOf(typeof(Exception),typeof(Int32));
+            Assume.That(1).Is.InstanceOf(new []{ typeof(Exception),typeof(Int32) });
             
             try
             {
-                Assume.That(1).Is.InstanceOf(typeof(Exception),typeof(Decimal));
+                Assume.That(1).Is.InstanceOf(new []{ typeof(Exception),typeof(Decimal) });
                 
                 throw new Exception("Assumption was not thrown");
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal($"Expected actualValue (System.Int32) to be derived from one of the following: System.Exception, System.Decimal", ex.Message);
+                Assert.Equal($"Expected System.Int32 to be derived from one of the following: System.Exception, System.Decimal", ex.Message);
             }
             
         }
@@ -259,7 +259,7 @@ namespace UnitTests
             }
             catch (Exception ex)
             {
-                Assume.That(ex).Is.InstanceOf(typeof(NotSupportedException), typeof(AssumptionFailure));
+                Assume.That(ex).Is.InstanceOf(new []{ typeof(NotSupportedException), typeof(AssumptionFailure) });
             }
             
             try
@@ -270,7 +270,7 @@ namespace UnitTests
             }
             catch (Exception ex)
             {
-                Assume.That(ex).Is.InstanceOf(typeof(NotSupportedException), typeof(AssumptionFailure));
+                Assume.That(ex).Is.InstanceOf(new []{ typeof(NotSupportedException), typeof(AssumptionFailure) });
             }
             
             try
@@ -287,8 +287,91 @@ namespace UnitTests
                 }
                 catch (AssumptionFailure ex2)
                 {
-                    Assert.Equal("Expected actualValue (System.NotSupportedException) to be derived from Assumptions.AssumptionFailure", ex2.Message);
+                    Assert.Equal("Expected System.NotSupportedException to be derived from Assumptions.AssumptionFailure", ex2.Message);
                 }
+            }
+        }
+        
+        [Fact]
+        public void Empty()
+        {
+            Assume.
+                That("").
+                Is.Empty();
+                
+            try
+            {
+                Assume.
+                    That("asdf").
+                    Is.Empty();
+
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("Expected 'asdf' to be empty", ex.Message);
+            }
+            
+            Assume.
+                That(new int[0]).
+                Is.Empty();
+                
+            try
+            {
+                Assume.
+                    That(new []{ "asdf" }).
+                    Is.Empty();
+
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("Expected collection to be empty", ex.Message);
+            }
+        }
+
+        [Fact]
+        public void And()
+        {
+            Assume.That(1).
+                Greater.Than(0).
+                And.GreaterThanOrEqual.To(-1).
+                And.Less.Than(2);
+                
+            try
+            {
+                Assume.That(1).
+                    Greater.Than(2).
+                    And.GreaterThanOrEqual.To(-1).
+                    And.Less.Than(2);
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+            }
+            
+            try
+            {
+                Assume.That(1).
+                    Greater.Than(0).
+                    And.GreaterThanOrEqual.To(11).
+                    And.Less.Than(2);
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+            }
+            
+            try
+            {
+                Assume.That(1).
+                    Greater.Than(2).
+                    And.GreaterThanOrEqual.To(-1).
+                    And.Less.Than(-2222);
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
             }
         }
         
@@ -310,7 +393,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue to run to completion without raising an exception", ex.Message);
+                Assert.Equal("Expected lambda to run to completion without raising an exception", ex.Message);
             }
             
             try
@@ -337,7 +420,103 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue to raise an exception before running to completion", ex.Message);
+                Assert.Equal("Expected lambda to raise an exception before running to completion", ex.Message);
+            }
+        }
+        
+        [Fact]
+        public void CanProvideExplanation()
+        {
+            try
+            {
+                Assume.That(1).Is.Not.Equal.To(1, "The number of foos must not equal the number of bars");
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("The number of foos must not equal the number of bars. Expected '1' to not be equal to '1'", ex.Message);
+            }
+            
+            try
+            {
+                Assume.That(3).Is.Less.Than(2, "The number of blats must be less than the number of splats");
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("The number of blats must be less than the number of splats. Expected '3' to be less than '2'", ex.Message);
+            }
+
+            try
+            {
+                var lifeIsPeachy = true;
+                Assume.That(lifeIsPeachy).Is.Not.True("Life is like a box of chocolates");
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("Life is like a box of chocolates. Expected <true> to not be <true>", ex.Message);
+            }
+
+            try
+            {
+                var lifeIsPeachy = true;
+                Assume.That(lifeIsPeachy).Is.False("Life is like a box of chocolates. You never known what you're going to get");
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("Life is like a box of chocolates. You never known what you're going to get. Expected <true> to be <false>", ex.Message);
+            }
+
+            try
+            {
+                Assume.That(null).Is.Not.Null("To be, or not to be... null...");
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("To be, or not to be... null.... Expected <null> to not be <null>", ex.Message);
+            }
+
+            try
+            {
+                Assume.That("").Is.Not.Empty("To be, or not to be... empty...");
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("To be, or not to be... empty.... Expected '' to not be empty", ex.Message);
+            }
+
+            try
+            {
+                Assume.That(new NotSupportedException()).Is.Not.InstanceOf(new []{ typeof(NotSupportedException) },
+                    "We should not get a not-supported-exception thrown into our face");
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("We should not get a not-supported-exception thrown into our face. Expected System.NotSupportedException to not be derived from System.NotSupportedException", ex.Message);
+            }
+            
+            try
+            {
+                Assume.That(new ArgumentNullException()).Is.InstanceOf(new []{ typeof(NotSupportedException) },
+                    "We should get a not-supported-exception thrown into our face");
+                
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("We should get a not-supported-exception thrown into our face. Expected System.ArgumentNullException to be derived from System.NotSupportedException", ex.Message);
             }
         }
     }

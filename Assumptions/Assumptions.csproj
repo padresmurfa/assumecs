@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageVersion>1.1.3</PackageVersion>
+    <PackageVersion>1.2</PackageVersion>
     <Authors>David Brandt</Authors>
     <NeutralLanguage>en-EN</NeutralLanguage>
     <PackageLicenseUrl>http://unlicense.org/</PackageLicenseUrl>
     <Owners>David Brandt</Owners>
     <PackageProjectUrl>https://github.com/padresmurfa/assumptions</PackageProjectUrl>
-    <PackageReleaseNotes>This version adds the ability to make assumptions about the occurrance/absence of an exception in an Action</PackageReleaseNotes>
+    <PackageReleaseNotes>This version alters the syntax for expressing explanations, adds the 'And' operator which reopens an expression and allows a new That statement, tweaks the interface of InstanceOf for consistency reasons, and adds the first version of reasonable documentation.</PackageReleaseNotes>
     <Summary>The Assumptions library provides a clean method to make implicit assumptions explicit in C#.</Summary>
     <PackageTags>assumptions assume assert implicit explicit code quality testing</PackageTags>
     <Title>Assumptions</Title>

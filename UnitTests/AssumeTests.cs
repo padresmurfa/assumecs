@@ -32,7 +32,7 @@ namespace UnitTests
             // state, so nothing more we can test really, unless we change the
             // interface.  Not neccessary however, since this will be tested
             // elsewhere
-            var that = Assume.That("actual", "name");
+            var that = Assume.That("actual");
             Assert.NotNull(that);
         }
     }

@@ -5,7 +5,7 @@ namespace Assumptions
 {
     public class Assumption
     {
-        public Assumption Than(object expected, string name = null)
+        public Assumption Than(object expected, string explanation = null)
         {
             void Evaluate()
             {
@@ -24,7 +24,7 @@ namespace Assumptions
         
             Expected = expected;
 
-            ExpectedGivenName = name;
+            Explanation = explanation;
 
             VerifyAssumptionIntegrity();
 
@@ -33,13 +33,24 @@ namespace Assumptions
             return this;
         }
 
-        public Assumption To(object expected, string name = null)
+        public Assumption To(object expected, string explanation = null)
         {
-            return Than(expected, name);
+            return Than(expected, explanation);
         }
 
         public Assumption Is => this;
-        
+        public Assumption Be => this;
+        public Assumption An => this;
+        public Assumption Of => this;
+        public Assumption A => this;
+        public Assumption Been => this;
+        public Assumption Have => this;
+        public Assumption Has => this;
+        public Assumption With => this;
+        public Assumption Which => this;
+        public Assumption The => this;
+        public Assumption It => this;
+
         public Assumption Not
         {
             get
@@ -48,6 +59,31 @@ namespace Assumptions
                 
                 return this;
             }
+        }
+        
+        public Assumption And
+        {
+            get
+            {
+                if (!this.isExpressionClosed)
+                {
+                    throw new BadGrammar("Cannot reopen an expression with And before closing it");
+                }
+                
+                this.isExpressionClosed = false;
+                
+                return this;
+            }
+        }
+        
+        public Assumption That(
+            object actual)
+        {
+            this.Actual = actual;
+            this.isEquatable = false;
+            this.isComparable = false;
+            
+            return this;
         }
 
         public Assumption Less
@@ -59,8 +95,8 @@ namespace Assumptions
                 Expression = (expected, actual) => Check(
                     (((IComparable)actual).CompareTo(expected)) < 0,
                     inverted,
-                    () => $"Expected {this.ActualName} ({actual}) to be less than {this.ExpectedName} ({expected})",
-                    () => $"Expected {this.ActualName} ({actual}) to not be less than {this.ExpectedName} ({expected})"
+                    () => $"Expected '{actual}' to be less than '{expected}'",
+                    () => $"Expected '{actual}' to not be less than '{expected}'"
                 );
 
                 return this;
@@ -76,8 +112,8 @@ namespace Assumptions
                 Expression = (expected, actual) => Check(
                     (((IComparable)actual).CompareTo(expected)) > 0,
                     inverted,
-                    () => $"Expected {this.ActualName} ({actual}) to be greater than {this.ExpectedName} ({expected})",
-                    () => $"Expected {this.ActualName} ({actual}) to not be greater than {this.ExpectedName} ({expected})"
+                    () => $"Expected '{actual}' to be greater than '{expected}'",
+                    () => $"Expected '{actual}' to not be greater than '{expected}'"
                 );
 
                 return this;
@@ -93,8 +129,8 @@ namespace Assumptions
                 Expression = (expected, actual) => Check(
                     (((IComparable)actual).CompareTo(expected)) <= 0,
                     inverted,
-                    () => $"Expected {this.ActualName} ({actual}) to be less than, or equal to, {this.ExpectedName} ({expected})",
-                    () => $"Expected {this.ActualName} ({actual}) to not be less than, or equal to, {this.ExpectedName} ({expected})"
+                    () => $"Expected '{actual}' to be less than or equal to '{expected}'",
+                    () => $"Expected '{actual}' to not be less than or equal to '{expected}'"
                 );
 
                 return this;
@@ -110,8 +146,8 @@ namespace Assumptions
                 Expression = (expected, actual) => Check(
                     (((IComparable)actual).CompareTo(expected)) >= 0,
                     inverted,
-                    () => $"Expected {this.ActualName} ({actual}) to be greater than, or equal to, {this.ExpectedName} ({expected})",
-                    () => $"Expected {this.ActualName} ({actual}) to not be greater than, or equal to, {this.ExpectedName} ({expected})"
+                    () => $"Expected '{actual}' to be greater than or equal to '{expected}'",
+                    () => $"Expected '{actual}' to not be greater than or equal to '{expected}'"
                 );
 
                 return this;
@@ -127,48 +163,55 @@ namespace Assumptions
                 Expression = (expected, actual) => Check(
                     actual.Equals(expected),
                     inverted,
-                    () => $"Expected {this.ActualName} ({actual}) to be equal to {this.ExpectedName} ({expected})",
-                    () => $"Expected {this.ActualName} ({actual}) to not be equal to {this.ExpectedName} ({expected})"
+                    () => $"Expected '{actual}' to be equal to '{expected}'",
+                    () => $"Expected '{actual}' to not be equal to '{expected}'"
                 );
 
                 return this;
             }
         }
         
-        public Assumption False()
+        public Assumption False(string explanation = null)
         {
             var inverted = this.CloseExpression(equatable: true);
             
             Expression = (expected, actual) => Check(
                 actual.Equals(expected),
                 inverted,
-                () => $"Expected {this.ActualName} ({actual}) to be False",
-                () => $"Expected {this.ActualName} ({actual}) to not be False"
+                () => $"Expected <true> to be <false>",
+                () => $"Expected <false> to not be <false>"
             );
 
-            this.To(false, "false");
+            this.To(false, explanation);
 
             return this;
         }
 
-        public Assumption True()
+        public Assumption True(string explanation = null)
         {
             var inverted = this.CloseExpression(equatable: true);
             
             Expression = (expected, actual) => Check(
                 actual.Equals(expected),
                 inverted,
-                () => $"Expected {this.ActualName} ({actual}) to be True",
-                () => $"Expected {this.ActualName} ({actual}) to not be True"
+                () => $"Expected <false> to be <true>",
+                () => $"Expected <true> to not be <true>"
             );
 
-            this.To(true, "true");
+            this.To(true, explanation);
 
             return this;
         }
         
-        public Assumption InstanceOf(params Type[] types)
+        public Assumption InstanceOf(Type type, string explanation = null)
         {
+            return InstanceOf(new []{ type }, explanation);
+        }
+        
+        public Assumption InstanceOf(Type[] types, string explanation = null)
+        {
+            Assume.That(types).Is.Not.Null().And.Is.Not.Empty();
+            
             string InstanceOfHelperTypeNames(object expected)
             {
                 var et = (Type[])expected;
@@ -188,33 +231,77 @@ namespace Assumptions
                 return Check(
                     ((Type[])expected).Any(type => type.IsAssignableFrom(actual.GetType())),
                     inverted,
-                    () => $"Expected {this.ActualName} ({((Type)actual.GetType()).FullName}) to be derived from {InstanceOfHelperTypeNames(expected)}",
-                    () => $"Expected {this.ActualName} ({((Type)actual.GetType()).FullName}) to not be derived from {InstanceOfHelperTypeNames(expected)}"
+                    () => $"Expected {((Type)actual.GetType()).FullName} to be derived from {InstanceOfHelperTypeNames(expected)}",
+                    () => $"Expected {((Type)actual.GetType()).FullName} to not be derived from {InstanceOfHelperTypeNames(expected)}"
                 );
             };
 
-            this.To(types, "types");
+            this.To(types, explanation);
+
+            return this;
+        }
+
+        public Assumption Empty(string explanation = null)
+        {
+            var inverted = this.CloseExpression();
+            
+            Expression = (expected, actual) => {
+                var at = actual?.GetType();
+                if (actual == null || typeof(String).IsAssignableFrom(at))
+                {
+                    return Check(
+                        string.IsNullOrEmpty((string)actual),
+                        inverted,
+                        () => $"Expected '{actual}' to be empty",
+                        () => $"Expected '{actual}' to not be empty"
+                    );
+                }
+                else if (typeof(System.Collections.ICollection).IsAssignableFrom(at))
+                {
+                    var ac = (System.Collections.ICollection)actual;
+                    return Check(
+                        ac.Count == 0,
+                        inverted,
+                        () => $"Expected collection to be empty",
+                        () => $"Expected collection to not be empty"
+                    );
+                }
+                else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(at))
+                {
+                    var ac = (System.Collections.IEnumerable)actual;
+                    var hasAny = ac.GetEnumerator().MoveNext();
+                    return Check(
+                        !hasAny,
+                        inverted,
+                        () => $"Expected collection to be empty",
+                        () => $"Expected collection to not be empty"
+                    );
+                }
+                throw new BadGrammar($"Empty is not applicable to '{at.FullName}'");
+            };
+            
+            this.To(null, explanation);
 
             return this;
         }
         
-        public Assumption Null()
+        public Assumption Null(string explanation = null)
         {
             var inverted = this.CloseExpression();
             
             Expression = (expected, actual) => Check(
                 actual == null,
                 inverted,
-                () => $"Expected {this.ActualName} ({actual}) to be null",
-                () => $"Expected {this.ActualName} (<null>) to not be null"
+                () => $"Expected '{actual}' to be <null>",
+                () => $"Expected <null> to not be <null>"
             );
 
-            this.To(null, "null");
+            this.To(null, explanation);
 
             return this;
         }
 
-        public Assumption Completed()
+        public Assumption Completed(string explanation = null)
         {
             var inverted = this.CloseExpression();
             
@@ -227,7 +314,7 @@ namespace Assumptions
                     try
                     {
                         ((Action)actual)();
-                        throw CreateAssumptionFailure($"Expected {this.ActualName} to raise an exception before running to completion");
+                        throw CreateAssumptionFailure($"Expected lambda to raise an exception before running to completion");
                     }
                     catch (Exception)
                     {
@@ -243,12 +330,12 @@ namespace Assumptions
                     }
                     catch (Exception ex)
                     {
-                        throw CreateAssumptionFailure($"Expected {this.ActualName} to run to completion without raising an exception", ex);
+                        throw CreateAssumptionFailure($"Expected lambda to run to completion without raising an exception", ex);
                     }
                 }
             };
             
-            this.To(null, "completed");
+            this.To(null, explanation);
 
             return this;
         }
@@ -256,28 +343,23 @@ namespace Assumptions
 
         // INTERNALS
         
-        public Assumption(object actual, string actualName, string callerMemberName, string callerSourceFilePath, int callerSourceLineNumber)
+        public Assumption(object actual, string callerMemberName, string callerSourceFilePath, int callerSourceLineNumber)
         {
             this.Actual = actual;
-            this.ActualGivenName = actualName;
 
             this.CallerMemberName = callerMemberName;
             this.CallerSourceFilePath = callerSourceFilePath;
             this.CallerSourceLineNumber = callerSourceLineNumber;
         }
 
-        private string ExpectedName => this.ExpectedGivenName ?? "expectedValue";
-        private string ActualName => this.ActualGivenName ?? "actualValue";
-
         private string CallerMemberName;
         private string CallerSourceFilePath;
         private int CallerSourceLineNumber;
 
         private object Actual;
-        private string ActualGivenName;
 
         private object Expected;
-        private string ExpectedGivenName;
+        private string Explanation;
 
         private Func<object, object, Func<string>> Expression;
 
@@ -332,9 +414,22 @@ namespace Assumptions
             return inverted;
         }
         
-        private AssumptionFailure CreateAssumptionFailure(string message = null, Exception innerException = null)
+        private AssumptionFailure CreateAssumptionFailure(string message, Exception innerException = null)
         {
-            return new AssumptionFailure(message, innerException, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
+            string reason;
+            if (string.IsNullOrEmpty(this.Explanation))
+            {
+                reason = message;
+            }
+            else if (string.IsNullOrEmpty(message))
+            {
+                reason = this.Explanation;
+            }
+            else
+            {
+                reason = this.Explanation + ". " + message;
+            }
+            return new AssumptionFailure(reason, innerException, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
         }
 
         private void VerifyAssumptionIntegrity()
@@ -345,11 +440,11 @@ namespace Assumptions
                 {
                     if (this.Actual != null && !Equatable(this.Actual))
                     {
-                        throw CreateAssumptionFailure($"'{this.ActualName}' must be equatable");
+                        throw CreateAssumptionFailure($"'actual value' must be equatable");
                     }
                     if (this.Expected != null && !Equatable(this.Expected))
                     {
-                        throw CreateAssumptionFailure($"'{this.ExpectedName}' must be equatable");
+                        throw CreateAssumptionFailure($"'expected value' must be equatable");
                     }
                 }
             }
@@ -360,11 +455,11 @@ namespace Assumptions
                 {
                     if (this.Actual != null && !Comparable(this.Actual))
                     {
-                        throw CreateAssumptionFailure($"'{this.ActualName}' must be comparable");
+                        throw CreateAssumptionFailure($"'actual value' must be comparable");
                     }
                     if (this.Expected != null && !Comparable(this.Expected))
                     {
-                        throw CreateAssumptionFailure($"'{this.ExpectedName}' must be comparable");
+                        throw CreateAssumptionFailure($"'expected value' must be comparable");
                     }
                 }
             }

@@ -23,7 +23,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (actual) to not be equal to expectedValue (actual)", ex.Message);
+                Assert.Equal("Expected 'actual' to not be equal to 'actual'", ex.Message);
             }
         }
         
@@ -56,7 +56,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (1) to not be less than expectedValue (2)", ex.Message);
+                Assert.Equal("Expected '1' to not be less than '2'", ex.Message);
             }
         }
         
@@ -77,7 +77,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (1) to not be less than, or equal to, expectedValue (1)", ex.Message);
+                Assert.Equal("Expected '1' to not be less than or equal to '1'", ex.Message);
             }
                         
             try
@@ -90,7 +90,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (1) to not be less than, or equal to, expectedValue (2)", ex.Message);
+                Assert.Equal("Expected '1' to not be less than or equal to '2'", ex.Message);
             }
         }
         
@@ -115,7 +115,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (2) to not be greater than expectedValue (1)", ex.Message);
+                Assert.Equal("Expected '2' to not be greater than '1'", ex.Message);
             }
         }
         
@@ -136,7 +136,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (1) to not be greater than, or equal to, expectedValue (1)", ex.Message);
+                Assert.Equal("Expected '1' to not be greater than or equal to '1'", ex.Message);
             }
             
             try
@@ -149,7 +149,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (2) to not be greater than, or equal to, expectedValue (1)", ex.Message);
+                Assert.Equal("Expected '2' to not be greater than or equal to '1'", ex.Message);
             }
         }
         
@@ -170,7 +170,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (True) to not be True", ex.Message);
+                Assert.Equal("Expected <true> to not be <true>", ex.Message);
             }
         }
         
@@ -191,7 +191,7 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (False) to not be False", ex.Message);
+                Assert.Equal("Expected <false> to not be <false>", ex.Message);
             }
         }
         
@@ -212,7 +212,45 @@ namespace UnitTests
             }
             catch (AssumptionFailure ex)
             {
-                Assert.Equal("Expected actualValue (<null>) to not be null", ex.Message);
+                Assert.Equal("Expected <null> to not be <null>", ex.Message);
+            }
+        }
+        
+        [Fact]
+        public void NotEmpty()
+        {
+            Assume.
+                That("asdf").
+                Is.Not.Empty();
+                
+            try
+            {
+                Assume.
+                    That(null).
+                    Is.Not.Empty();
+
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("Expected '' to not be empty", ex.Message);
+            }
+            
+            Assume.
+                That(new System.Collections.Generic.List<bool> { true, false}).
+                Is.Not.Empty();
+                
+            try
+            {
+                Assume.
+                    That(new System.Collections.Generic.HashSet<string> {}).
+                    Is.Not.Empty();
+
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (AssumptionFailure ex)
+            {
+                Assert.Equal("Expected collection to not be empty", ex.Message);
             }
         }
     }

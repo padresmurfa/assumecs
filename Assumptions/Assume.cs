@@ -7,22 +7,20 @@ namespace Assumptions
     {
         public static Assumption That(
             object actual,
-            string actualName = null,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerSourceFilePath = "",
             [CallerLineNumber] int callerSourceLineNumber = 0)
         {
-            return new Assumption(actual, actualName, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            return new Assumption(actual, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
         }
         
         public static Assumption That(
             Action actual,
-            string actualName = null,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerSourceFilePath = "",
             [CallerLineNumber] int callerSourceLineNumber = 0)
         {
-            return new Assumption(actual, actualName, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            return new Assumption(actual, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
         }
         
         public static void Unreachable(

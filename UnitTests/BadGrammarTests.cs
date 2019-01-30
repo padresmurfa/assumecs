@@ -57,6 +57,28 @@ namespace UnitTests
         }
         
         [Fact]
+        public void And()
+        {
+            try
+            {
+                var l = Assume.That(1).And;
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (BadGrammar)
+            {
+            }
+            
+            try
+            {
+                var v = Assume.That(1).Greater.Than(0).And.And;
+                throw new Exception("Assumption was not thrown");
+            }
+            catch (BadGrammar)
+            {
+            }
+        }
+        
+        [Fact]
         public void MultipleOperators()
         {
             Func<Assumption,Assumption>[] assumptions = new Func<Assumption,Assumption>[]{
