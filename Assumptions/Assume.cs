@@ -38,7 +38,8 @@ namespace Assumptions
             {
                 message = ".  Explanation: " + message;
             }
-            throw new AssumptionFailure("Expected this code to be unreachable" + message, innerException, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            
+            OnAssumptionFailure.Create("Expected this code to be unreachable" + message, innerException, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
         }
     }
 }

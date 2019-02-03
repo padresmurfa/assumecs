@@ -13,7 +13,8 @@ namespace Assumptions
                 if (failureReasonFactory != null)
                 {
                     var failureReason = failureReasonFactory();
-                    throw CreateAssumptionFailure(failureReason);
+                    OnAssumptionFailure.Create(failureReason, this.Explanation, null, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
+                    return;
                 }
             }
             
@@ -311,15 +312,9 @@ namespace Assumptions
 
                 if (inverted)
                 {
-                    try
-                    {
-                        ((Action)actual)();
-                        throw CreateAssumptionFailure($"Expected lambda to raise an exception before running to completion");
-                    }
-                    catch (Exception)
-                    {
-                        throw;
-                    }
+                    ((Action)actual)();
+                    OnAssumptionFailure.Create("Expected lambda to raise an exception before running to completion", this.Explanation, null, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
+                    return null;
                 }
                 else
                 {
@@ -330,7 +325,8 @@ namespace Assumptions
                     }
                     catch (Exception ex)
                     {
-                        throw CreateAssumptionFailure($"Expected lambda to run to completion without raising an exception", ex);
+                        OnAssumptionFailure.Create("Expected lambda to run to completion without raising an exception", this.Explanation, ex, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
+                        return null;
                     }
                 }
             };
@@ -413,24 +409,6 @@ namespace Assumptions
             this.isInvertedAssumption = false;
             return inverted;
         }
-        
-        private AssumptionFailure CreateAssumptionFailure(string message, Exception innerException = null)
-        {
-            string reason;
-            if (string.IsNullOrEmpty(this.Explanation))
-            {
-                reason = message;
-            }
-            else if (string.IsNullOrEmpty(message))
-            {
-                reason = this.Explanation;
-            }
-            else
-            {
-                reason = this.Explanation + ". " + message;
-            }
-            return new AssumptionFailure(reason, innerException, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
-        }
 
         private void VerifyAssumptionIntegrity()
         {
@@ -440,11 +418,13 @@ namespace Assumptions
                 {
                     if (this.Actual != null && !Equatable(this.Actual))
                     {
-                        throw CreateAssumptionFailure($"'actual value' must be equatable");
+                        OnAssumptionFailure.Create("'actual value' must be equatable", this.Explanation, null, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
+                        return;
                     }
                     if (this.Expected != null && !Equatable(this.Expected))
                     {
-                        throw CreateAssumptionFailure($"'expected value' must be equatable");
+                        OnAssumptionFailure.Create("'expected value' must be equatable", this.Explanation, null, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
+                        return;
                     }
                 }
             }
@@ -455,11 +435,13 @@ namespace Assumptions
                 {
                     if (this.Actual != null && !Comparable(this.Actual))
                     {
-                        throw CreateAssumptionFailure($"'actual value' must be comparable");
+                        OnAssumptionFailure.Create("'actual value' must be comparable", this.Explanation, null, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
+                        return;
                     }
                     if (this.Expected != null && !Comparable(this.Expected))
                     {
-                        throw CreateAssumptionFailure($"'expected value' must be comparable");
+                        OnAssumptionFailure.Create("'expected value' must be comparable", this.Explanation, null, this.CallerMemberName, this.CallerSourceFilePath, this.CallerSourceLineNumber);
+                        return;
                     }
                 }
             }

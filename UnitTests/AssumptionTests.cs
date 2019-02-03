@@ -346,7 +346,7 @@ namespace UnitTests
                     And.Less.Than(2);
                 throw new Exception("Assumption was not thrown");
             }
-            catch (AssumptionFailure ex)
+            catch (AssumptionFailure)
             {
             }
             
@@ -358,7 +358,7 @@ namespace UnitTests
                     And.Less.Than(2);
                 throw new Exception("Assumption was not thrown");
             }
-            catch (AssumptionFailure ex)
+            catch (AssumptionFailure)
             {
             }
             
@@ -370,7 +370,7 @@ namespace UnitTests
                     And.Less.Than(-2222);
                 throw new Exception("Assumption was not thrown");
             }
-            catch (AssumptionFailure ex)
+            catch (AssumptionFailure)
             {
             }
         }
