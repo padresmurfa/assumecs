@@ -4,14 +4,12 @@ namespace Assumptions
 {
     public static class OnAssumptionFailure
     {
-        public static void Create(string message, Exception innerException, string callerMemberName,
-            string callerSourceFilePath, int callerSourceLineNumber)
+        public static void Create(string message, Exception innerException, SourceCodeLocation sourceCodeLocation)
         {
-            throw new AssumptionFailure(message, innerException, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            throw new AssumptionFailure(message, innerException, sourceCodeLocation);
         }
         
-        public static void Create(string genericMessage, string specificMessage, Exception innerException, string callerMemberName,
-            string callerSourceFilePath, int callerSourceLineNumber)
+        public static void Create(string genericMessage, string specificMessage, Exception innerException, SourceCodeLocation sourceCodeLocation)
         {
             string reason;
             if (string.IsNullOrEmpty(specificMessage))
@@ -26,7 +24,7 @@ namespace Assumptions
             {
                 reason = specificMessage + ". " + genericMessage;
             }
-            throw new AssumptionFailure(reason, innerException, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            throw new AssumptionFailure(reason, innerException, sourceCodeLocation);
         }
 
     }

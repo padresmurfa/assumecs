@@ -7,25 +7,42 @@ namespace Assumptions
     {
         public static Assumption That(
             object actual,
+            SourceCodeLocation sourceCodeLocation)
+        {
+            return new Assumption(actual, sourceCodeLocation);
+        }
+
+        public static Assumption That(
+            Action actual,
+            SourceCodeLocation sourceCodeLocation)
+        {
+            return new Assumption(actual, sourceCodeLocation);
+        }
+        
+        public static Assumption That(
+            object actual,
+            string callerId = null,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerSourceFilePath = "",
             [CallerLineNumber] int callerSourceLineNumber = 0)
         {
-            return new Assumption(actual, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            return Assume.That(actual, new SourceCodeLocation(callerId, callerMemberName, callerSourceFilePath, callerSourceLineNumber));
         }
         
         public static Assumption That(
             Action actual,
+            string callerId = null,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerSourceFilePath = "",
             [CallerLineNumber] int callerSourceLineNumber = 0)
         {
-            return new Assumption(actual, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            return Assume.That(actual, new SourceCodeLocation(callerId, callerMemberName, callerSourceFilePath, callerSourceLineNumber));
         }
         
         public static void Unreachable(
             string message = null,
             Exception innerException = null,
+            string callerId = null,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerSourceFilePath = "",
             [CallerLineNumber] int callerSourceLineNumber = 0)
@@ -39,7 +56,7 @@ namespace Assumptions
                 message = ".  Explanation: " + message;
             }
             
-            OnAssumptionFailure.Create("Expected this code to be unreachable" + message, innerException, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            OnAssumptionFailure.Create("Expected this code to be unreachable" + message, innerException, new SourceCodeLocation(callerId, callerMemberName, callerSourceFilePath, callerSourceLineNumber));
         }
     }
 }

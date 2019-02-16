@@ -4,16 +4,12 @@ namespace Assumptions
 {
     public class AssumptionFailure : Exception
     {
-        public string CallerMemberName;
-        public string CallerSourceFilePath;
-        public int CallerSourceLineNumber;
+        public readonly SourceCodeLocation SourceCodeLocation;
 
-        public AssumptionFailure(string message, Exception innerException, string callerMemberName, string callerSourceFilePath, int callerSourceLineNumber)
+        public AssumptionFailure(string message, Exception innerException, SourceCodeLocation sourceCodeLocation)
             : base(message, innerException)
         {
-            this.CallerMemberName = callerMemberName;
-            this.CallerSourceFilePath = callerSourceFilePath;
-            this.CallerSourceLineNumber = callerSourceLineNumber;
+            this.SourceCodeLocation = sourceCodeLocation ?? throw new ArgumentNullException(nameof(sourceCodeLocation));
         }
     }
 }

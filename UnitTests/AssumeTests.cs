@@ -19,9 +19,9 @@ namespace UnitTests
             {
                 Assert.Equal("Expected this code to be unreachable.  Explanation: UnreachableCode", ex.Message);
                 Assert.Null(ex.InnerException);
-                Assert.Equal(nameof(UnreachableIsThrown), ex.CallerMemberName);
-                Assert.EndsWith(System.IO.Path.Combine("UnitTests","AssumeTests.cs"), ex.CallerSourceFilePath);
-                Assert.Equal(14, ex.CallerSourceLineNumber);
+                Assert.Equal(nameof(UnreachableIsThrown), ex.SourceCodeLocation.MemberName);
+                Assert.EndsWith(System.IO.Path.Combine("UnitTests","AssumeTests.cs"), ex.SourceCodeLocation.AbsoluteSourceFilePath);
+                Assert.Equal(14, ex.SourceCodeLocation.SourceLineNumber);
             }
         }
         

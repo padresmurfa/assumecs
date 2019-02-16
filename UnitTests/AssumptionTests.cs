@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Xunit;
 using Assumptions;
 
@@ -221,7 +222,9 @@ namespace UnitTests
         {
             Assume.That(new Exception()).Is.InstanceOf(typeof(Exception));
             
-            Assume.That(new AssumptionFailure("asdf",null,"mem","pat",1)).Is.InstanceOf(typeof(Exception));
+            var callerId = new SourceCodeLocation("id", "member", "path", 1234);
+            
+            Assume.That(new AssumptionFailure("asdf",null, callerId)).Is.InstanceOf(typeof(Exception));
             
             try
             {
@@ -519,5 +522,204 @@ namespace UnitTests
                 Assert.Equal("We should get a not-supported-exception thrown into our face. Expected System.ArgumentNullException to be derived from System.NotSupportedException", ex.Message);
             }
         }
+
+        [Fact]
+        public void CanDeclareThatSomethingIsProbablyTheCase()
+        {
+            var random = new Random(123456789);
+
+            void test(int expected, SourceCodeLocation location)
+            {
+                for (var i = 0; i < 10000; i++)
+                {
+                    var assumeThatActualValue = Assume.That(random.Next() % 100, location.Here());
+                    
+                    assumeThatActualValue.
+                        Is.Inconceivably(1.0f - 0.95f, 10).
+                        GreaterThanOrEqual.
+                        To(100 - expected,  $"Expected random d100's to usually be statistically above {expected}");
+                    
+                    assumeThatActualValue.
+                        Is.Probably(0.95f, 10).
+                        LessThanOrEqual.
+                        To(expected,  $"Expected random d100's to usually be statistically above {expected}");
+                    
+                    assumeThatActualValue.
+                        Is.Probably(0.95f, 10).
+                        Not.Greater.
+                        Than(expected,  $"Expected random d100's to usually be statistically above {expected}");
+                    
+                    assumeThatActualValue.
+                        Is.Sometimes(1.0f - 0.95f, 10).
+                        GreaterThanOrEqual.
+                        To(100 - expected,  $"Expected random d100's to usually be statistically above {expected}");
+                    
+                    assumeThatActualValue.
+                        Is.Certainly(0.95f, 10).
+                        Not.GreaterThanOrEqual.
+                        To(expected,  $"Expected random d100's to usually be statistically above {expected}");
+                    
+                    assumeThatActualValue.
+                        Is.Occasionally(1.0f - 0.95f, 10).
+                        Not.Less.
+                        Than(100 - expected,  $"Expected random d100's to usually be statistically above {expected}");
+                    
+                    // TODO: consider creating a good syntax for probably-not.  The actual probability is easy, but the
+                    // expected value is perhaps unsolvable using nice syntax, and the usability is perhaps weird.
+                    
+                    // TODO: certainly and inconceivably should have a default probability of 100 and 0, respectively
+                }
+            }
+
+            // this test should fail, since 85% is obviously not statistically above 95%, unless we have a really poor
+            // sample, which is not very likely given the total and minimum sample size
+            try
+            {
+                test(85, new SourceCodeLocation("CanDeclareThatSomethingIsUsuallyTheCase.failure"));
+                Assert.True(false);
+            }
+            catch (AssumptionFailure)
+            {
+            }
+            
+            // and this test should succeed, since 95% is obviously statistically speaking above (if only a fraction) 95%
+            // given any sort of sane sample.
+            test(95, new SourceCodeLocation("CanDeclareThatSomethingIsUsuallyTheCase.success"));
+        }
+
+        /*
+        
+        minimum sample size could be determined from a global default.  I.e. we don't trust sample sizes that imply less
+        than x% certainty.  Not sure that this is possible...
+        //
+        // I think it can be done if you assume e.g. a normal distribution
+        //
+        // https://www.qualtrics.com/experience-management/research/determine-sample-size/
+        // https://www.dummies.com/education/math/statistics/how-to-determine-the-minimum-size-needed-for-a-statistical-sample/
+        //
+        // perhaps it can be done with others if a distribution is specified and formula used for it as well:
+        // https://blog.cloudera.com/blog/2015/12/common-probability-distributions-the-data-scientists-crib-sheet/
+        //
+        // perhaps one of the cool things to assume would be that a probability follows a particular distribution.
+        
+        ---
+        strict mode vs relaxed mode assumptions:
+        
+        Basically, what are the consequences of an assumption failure?
+        -> Log?
+        -> Metrics?
+        -> Exception?
+        
+        Is there any value in being able to programmatically state that
+        something is strictly the case vs the case in a relaxed fashion?
+        
+        Probably should probably never be strict by default.
+        Anything else hitherto specified should probably always be strict by default.
+        
+        ----
+        
+        testing - autodetect low-value tests, run tests in priority queue with blocking bridge.
+        
+        [Fact]
+        public void CanTILAB()
+        {
+            var tilab = true;
+            
+            Assume.That(tilab).
+                Is.Covered.By("can_test_it_like_a_boss").
+                And.That(!x).Is.Covered.By("!can_test_it_like_a_boss");
+
+            if (TDD.Cover(tilab,"can_test_it_like_a_boss"))
+            {
+            }
+            
+            TDD.Cover("reached")
+            
+            TDD.Covers("#can_test_it_like_a_boss");
+        }
+        
+        [Fact]
+        public void CanDeclareThatSomethingBehavesConsistentlyOverTime()
+        {
+            this can be modelled, e.g. by having two accumulated probability functions,
+            
+            one starts immediately (A)
+            the other (B) after e.g. 30 minutes or 20 occurrances (basically as determined by the consistency-interval)
+            
+            the assertion is then that B could be equal to A.
+            if this holds true, then don't go apeshit.
+            
+            This can either be a boolean, or a number.
+        
+            var hit = 85;
+            var random = new Random();
+            for (var i = 0; i < 10000; i++)
+            {
+                var d100 = random.Next() % 100;
+                if (i > 1000)
+                {
+                    // should be detected
+                    d100 /= 2;
+                }
+                Assume.
+                    That(d100).
+                    Is.Consistently.Over.The.Last(10).Occurrances.
+                    LessThanOrEqual.To(hit);
+            }
+        }
+                 
+        // or that something correlates e.g. linearly to something else
+                 
+        [Fact]
+        public void CanDeclareThatSomethingObeysATemporalConstraint()
+        {
+            Assume.That(()=>{
+                Thread.Sleep(10000);
+            }).Completes.In.Less.Than(TimeSpan.FromSeconds(3));
+        }
+
+        [Fact]
+        public void CanDeclareThatSomethingObeysAPermanentSpatialConstraint()
+        {
+            byte[] v;
+            Assume.That(()=>{
+                v = new byte[100000];
+            }).Completes.Retaining.Less.Than(Resources.RAM.Kilobytes(80));
+        }
+
+        [Fact]
+        public void CanDeclareThatSomethingObeysATemporalConstraint()
+        {
+            Assume.That(()=>{
+                Thread.Sleep(10000);
+            }).Completes.Using.Less.Than(Resources.CPU(TimeSpan.FromMilliseconds(500)));
+        }
+        */
+
+        /*
+        [Fact]
+        public void CanDeclareThatSomethingObeysATemporarySpatialConstraint()
+        {
+            Assume.That(()={
+                var v = new byte[100000];
+            }).Completes.Allocating.Less.Than(Resources.RAM.Kilobytes(80));
+        }
+        */
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

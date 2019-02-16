@@ -5,19 +5,16 @@ namespace Assumptions
 {
     public class BadGrammar : Exception
     {
-        public string CallerMemberName;
-        public string CallerSourceFilePath;
-        public int CallerSourceLineNumber;
+        public SourceCodeLocation SourceCodeLocation;
 
         public BadGrammar(string message, 
+            string callerId = null,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerSourceFilePath = "",
             [CallerLineNumber] int callerSourceLineNumber = 0)
             : base(message)
         {
-            this.CallerMemberName = callerMemberName;
-            this.CallerSourceFilePath = callerSourceFilePath;
-            this.CallerSourceLineNumber = callerSourceLineNumber;
+            this.SourceCodeLocation = new SourceCodeLocation(callerId, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
         }
     }
 }
