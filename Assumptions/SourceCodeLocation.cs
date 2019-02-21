@@ -28,11 +28,12 @@ namespace Assumptions
         }
 
         public SourceCodeLocation Here(
+            string id = null,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerSourceFilePath = "",
             [CallerLineNumber] int callerSourceLineNumber = 0)
         {
-            return new SourceCodeLocation(Id, this.MemberName, this.AbsoluteSourceFilePath, this.SourceLineNumber);
+            return new SourceCodeLocation(id ?? Id, this.MemberName, this.AbsoluteSourceFilePath, this.SourceLineNumber);
         }
 
         private long? _key;

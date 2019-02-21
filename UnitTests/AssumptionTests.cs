@@ -1,7 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
+using System.Linq;
+using System.Runtime.ConstrainedExecution;
+using System.Security;
 using Xunit;
 using Assumptions;
+using Microsoft.DotNet.PlatformAbstractions;
 
 namespace UnitTests
 {
@@ -426,7 +435,7 @@ namespace UnitTests
                 Assert.Equal("Expected lambda to raise an exception before running to completion", ex.Message);
             }
         }
-        
+
         [Fact]
         public void CanProvideExplanation()
         {
@@ -523,72 +532,173 @@ namespace UnitTests
             }
         }
 
-        [Fact]
-        public void CanDeclareThatSomethingIsProbablyTheCase()
+
+        private void ApplyChaos(
+            Action<int,SourceCodeLocation> action,
+            SourceCodeLocation location)
         {
             var random = new Random(123456789);
 
-            void test(int expected, SourceCodeLocation location)
+            for (var i = 0; i < 10000; i++)
             {
-                for (var i = 0; i < 10000; i++)
-                {
-                    var assumeThatActualValue = Assume.That(random.Next() % 100, location.Here());
-                    
-                    assumeThatActualValue.
-                        Is.Inconceivably(1.0f - 0.95f, 10).
-                        GreaterThanOrEqual.
-                        To(100 - expected,  $"Expected random d100's to usually be statistically above {expected}");
-                    
-                    assumeThatActualValue.
-                        Is.Probably(0.95f, 10).
-                        LessThanOrEqual.
-                        To(expected,  $"Expected random d100's to usually be statistically above {expected}");
-                    
-                    assumeThatActualValue.
-                        Is.Probably(0.95f, 10).
-                        Not.Greater.
-                        Than(expected,  $"Expected random d100's to usually be statistically above {expected}");
-                    
-                    assumeThatActualValue.
-                        Is.Sometimes(1.0f - 0.95f, 10).
-                        GreaterThanOrEqual.
-                        To(100 - expected,  $"Expected random d100's to usually be statistically above {expected}");
-                    
-                    assumeThatActualValue.
-                        Is.Certainly(0.95f, 10).
-                        Not.GreaterThanOrEqual.
-                        To(expected,  $"Expected random d100's to usually be statistically above {expected}");
-                    
-                    assumeThatActualValue.
-                        Is.Occasionally(1.0f - 0.95f, 10).
-                        Not.Less.
-                        Than(100 - expected,  $"Expected random d100's to usually be statistically above {expected}");
-                    
-                    // TODO: consider creating a good syntax for probably-not.  The actual probability is easy, but the
-                    // expected value is perhaps unsolvable using nice syntax, and the usability is perhaps weird.
-                    
-                    // TODO: certainly and inconceivably should have a default probability of 100 and 0, respectively
-                }
-            }
+                var chaos = random.Next() % 100;
 
-            // this test should fail, since 85% is obviously not statistically above 95%, unless we have a really poor
-            // sample, which is not very likely given the total and minimum sample size
+                action(chaos, location);
+            }
+        }
+
+        void ChaoticallyFalse(
+            Action<int,SourceCodeLocation> action,
+            string callerId = null,
+            [CallerMemberName] string callerMemberName = "",
+            [CallerFilePath] string callerSourceFilePath = "",
+            [CallerLineNumber] int callerSourceLineNumber = 0)
+        {
+            callerId = (callerId ?? string.Empty) + "-failed";
+            
+            var location = new SourceCodeLocation(callerId, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            
             try
             {
-                test(85, new SourceCodeLocation("CanDeclareThatSomethingIsUsuallyTheCase.failure"));
+                ApplyChaos(action, location);
                 Assert.True(false);
             }
             catch (AssumptionFailure)
             {
             }
+        }
+
+        void ChaoticallyTrue(
+            Action<int,SourceCodeLocation> action,
+            string callerId = null,
+            [CallerMemberName] string callerMemberName = "",
+            [CallerFilePath] string callerSourceFilePath = "",
+            [CallerLineNumber] int callerSourceLineNumber = 0)
+        {
+            callerId = (callerId ?? string.Empty) + "-succeeded";
             
-            // and this test should succeed, since 95% is obviously statistically speaking above (if only a fraction) 95%
-            // given any sort of sane sample.
-            test(95, new SourceCodeLocation("CanDeclareThatSomethingIsUsuallyTheCase.success"));
+            var location = new SourceCodeLocation(callerId, callerMemberName, callerSourceFilePath, callerSourceLineNumber);
+            
+            ApplyChaos(action, location);
+        }
+        
+        [Fact]
+        public void CanDeclareThatSomethingIsProbablyTheCase()
+        {
+            ChaoticallyTrue( (actual, location) =>
+            {
+                Assume.That(actual, location.Here()).
+                    Is.Probably(0.95f, 10).
+                    Not.Greater.
+                    Than(95,  $"Expected random d100's to usually not be greater than 95");
+            });
+                    
+            ChaoticallyFalse( (actual, location) =>
+            {
+                Assume.That(actual, location.Here()).
+                    Is.Probably(0.95f, 10).
+                    Less.
+                    Than(85,  $"Expected random d100's to NOT usually be less than 85");
+            });
+        }    
+    
+        [Fact]
+        public void CanDeclareThatSomethingIsCertainlyTheCase()
+        {
+            ChaoticallyTrue( (actual, location) =>
+            {
+                Assume.That(actual, location.Here()).
+                    Is.Certainly(10).
+                    Not.GreaterThanOrEqual.
+                    To(99,  $"Expected random d100's to usually be statistically above 99");
+                
+                Assume.That(actual, location.Here()).
+                    Is.Certainly(10).
+                    GreaterThanOrEqual.
+                    To(1,  $"Expected random d100's to usually be statistically above 99");
+            });
+                    
+            ChaoticallyFalse( (actual, location) =>
+            {
+                Assume.That(actual, location.Here()).
+                    Is.Certainly(10).
+                    Not.GreaterThanOrEqual.
+                    To(1,  $"Expected random d100's to usually be statistically above 1");
+            });
+        }
+        
+        [Fact]
+        public void CanDeclareThatSomethingIsCertainlyNotTheCase()
+        {
+            ChaoticallyTrue( (actual, location) =>
+            {
+                Assume.That(actual, location.Here()).
+                    Is.CertainlyNot(10).
+                    LessThanOrEqual.
+                    To(1,  $"Expected random d100's to usually be statistically above 1");
+            });
+                    
+            ChaoticallyFalse( (actual, location) =>
+            {
+                Assume.That(actual, location.Here()).
+                    Is.CertainlyNot(10).
+                    LessThanOrEqual.
+                    To(99,  $"Expected random d100's to usually be statistically above 99");
+            });
+        }
+        
+        [Fact]
+        public void CanDeclareThatSomethingIsConsistent()
+        {
+            var r = new Random(43838);
+            for (var i = 0; i < 10; i++)
+            {
+                var probability = r.Next() % 100;
+
+                ChaoticallyTrue((actual, location) =>
+                {
+                    Assume.That(actual, location.Here(i.ToString())).Is.Consistently(50).Greater.Than(probability,
+                        $"Expected random d100's to usually be greater than {probability}");
+                });
+            }
+
+            var n = 0;
+            var x = 50;
+            
+            ChaoticallyFalse((actual, location) =>
+            {
+                if (n++ % 18 == 0)
+                {
+                    x = r.Next();
+                }
+
+                Assume.That(actual, location.Here()).Is.Consistently(50).Greater
+                    .Than(x, $"Expected random d100's to usually be greater than {x}");
+            });
+        }
+
+        [Fact]
+        public void CanDetectMemoryLeak()
+        {
+            Assume.That(() =>
+            {
+                var g = new {i = 0};
+            }).Does.Not.Leak();
+
+            var leak = new List<object>();
+            Assume.That(() =>
+            {
+                leak.Add(new {i = 0});
+            }).Leaks();
         }
 
         /*
-        
+         
+         assume consistent 
+         * persistent storage to determine relationship between tests, or just over time
+         
+         what assumptions have not been tested?
+         
         minimum sample size could be determined from a global default.  I.e. we don't trust sample sizes that imply less
         than x% certainty.  Not sure that this is possible...
         //
@@ -614,61 +724,22 @@ namespace UnitTests
         something is strictly the case vs the case in a relaxed fashion?
         
         Probably should probably never be strict by default.
-        Anything else hitherto specified should probably always be strict by default.
+        Anything else should probably always be strict by default.
         
         ----
         
         testing - autodetect low-value tests, run tests in priority queue with blocking bridge.
-        
-        [Fact]
-        public void CanTILAB()
-        {
-            var tilab = true;
-            
-            Assume.That(tilab).
-                Is.Covered.By("can_test_it_like_a_boss").
-                And.That(!x).Is.Covered.By("!can_test_it_like_a_boss");
 
-            if (TDD.Cover(tilab,"can_test_it_like_a_boss"))
-            {
-            }
-            
-            TDD.Cover("reached")
-            
-            TDD.Covers("#can_test_it_like_a_boss");
-        }
+        // or that something correlates e.g. linearly to something else
+                 
         
         [Fact]
         public void CanDeclareThatSomethingBehavesConsistentlyOverTime()
         {
-            this can be modelled, e.g. by having two accumulated probability functions,
-            
-            one starts immediately (A)
-            the other (B) after e.g. 30 minutes or 20 occurrances (basically as determined by the consistency-interval)
-            
-            the assertion is then that B could be equal to A.
-            if this holds true, then don't go apeshit.
-            
-            This can either be a boolean, or a number.
-        
-            var hit = 85;
-            var random = new Random();
-            for (var i = 0; i < 10000; i++)
-            {
-                var d100 = random.Next() % 100;
-                if (i > 1000)
-                {
-                    // should be detected
-                    d100 /= 2;
-                }
-                Assume.
-                    That(d100).
-                    Is.Consistently.Over.The.Last(10).Occurrances.
-                    LessThanOrEqual.To(hit);
-            }
+            // similar to consistent over invocations, except using time instead of invocation count to
+            // determine the distance between samples to compare.
+            // may also want to use a persistent store here.
         }
-                 
-        // or that something correlates e.g. linearly to something else
                  
         [Fact]
         public void CanDeclareThatSomethingObeysATemporalConstraint()
@@ -676,15 +747,6 @@ namespace UnitTests
             Assume.That(()=>{
                 Thread.Sleep(10000);
             }).Completes.In.Less.Than(TimeSpan.FromSeconds(3));
-        }
-
-        [Fact]
-        public void CanDeclareThatSomethingObeysAPermanentSpatialConstraint()
-        {
-            byte[] v;
-            Assume.That(()=>{
-                v = new byte[100000];
-            }).Completes.Retaining.Less.Than(Resources.RAM.Kilobytes(80));
         }
 
         [Fact]
@@ -700,9 +762,107 @@ namespace UnitTests
         [Fact]
         public void CanDeclareThatSomethingObeysATemporarySpatialConstraint()
         {
+            i.e. the amount of "memory pressure" that the code applies.
+            
             Assume.That(()={
                 var v = new byte[100000];
             }).Completes.Allocating.Less.Than(Resources.RAM.Kilobytes(80));
+        }
+        
+        
+        
+public static class CodeFirst
+{
+        public string GetTestMethodName()
+        {
+            try
+            {
+                // for when it runs via TeamCity
+                return TestContext.CurrentContext.Test.Name;
+            }
+            catch
+            {
+                // for when it runs via Visual Studio locally
+                var stackTrace = new StackTrace(); 
+                foreach (var stackFrame in stackTrace.GetFrames())
+                {
+                    MethodBase methodBase = stackFrame.GetMethod();
+                    Object[] attributes = methodBase.GetCustomAttributes(
+                                              typeof(TestAttribute), false); 
+                    if (attributes.Length >= 1)
+                    {
+                        return methodBase.Name;
+                    }
+                }
+                return "Not called from a test method";  
+            }
+        }
+    }
+
+    namespace UnitTests
+    {
+        public class Blark
+        {
+            private static CodeFirst CodeFirst;
+            
+            private void Foo()
+            {
+                CodeFirst.Is.Covered;
+            }
+        
+            private void Blat()
+            {
+                var code = "asdf";
+                ...
+                
+                switch (CodeFirst.Covers(code))
+                {
+                    case "asdf":
+                        // do some asdf stuff
+                        break;
+                        
+                    default:
+                        // do something else
+                }
+            }
+        
+            private void Splat()
+            {
+                CodeFirst.Covers(true)
+            }
+        
+            private void Flat()
+            {
+                if (CodeFirst.Covers(false))
+                {
+                }
+            }
+            
+            // TODO: CodeFirst.Covers should be syntactic sugar for
+            // Assume.That(CodeFirst).Covers.
+        }
+        
+        [Covers(typeof(Blark)]
+        public class BlarkTests
+        {
+            // TODO: make the attribute, when constructed, create a coverage declaration.
+            //       if there are any coverage declarations, then we are in a test build
+            //       and if we are in a test build, then each Assume.Tested can perform a
+            //       lookup involving a stack walk if need be.  It will be slow, but it
+            //       might be ok.
+            [Fact]
+            [Covers(nameof(Blark.Foo))]
+            [Covers(nameof(Blark.Blat), "asdf")]
+            [Covers(nameof(Blark.Splat), true)]
+            public void CanTestCoverage()
+            {
+                Foo();
+                Blat();
+                Splat();
+            
+                // Not covered.
+                Flat();
+            }
         }
         */
     }

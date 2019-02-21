@@ -3,15 +3,17 @@ using Assumptions;
 
 namespace Assumptions
 {
-    public class AccumulatedProbabilityFunc : ProbabiltyFunc
+    public class OnlineMeanProbabilityFunc : ProbabiltyFunc
     {
         public float Probability;
         public int MinimumSampleSize;
         public int WithinNumberOfStandardDeviations = 1;
         
-        private float count;
-        private float mean;
+        public float Count;
+        public float Mean;
         private float m2;
+        
+        private const int cycleAtCount = int.MaxValue >> 1;
 
         private float? Variance
         {
@@ -19,9 +21,9 @@ namespace Assumptions
             {
                 // the algorithm is not designed to work until at least 2 samples have been
                 // acquires
-                if (count < 2) return null;
+                if (Count < 2) return null;
                 
-                return m2 / count;
+                return m2 / Count;
             }
         }
 
@@ -29,7 +31,7 @@ namespace Assumptions
         {
             get
             {
-                if (count < MinimumSampleSize)
+                if (Count < MinimumSampleSize)
                 {
                     return null;
                 }
@@ -38,8 +40,8 @@ namespace Assumptions
             }
         }
 
-        private float LowerBound => mean - (StableVariance.Value * (float) WithinNumberOfStandardDeviations);
-        private float UpperBound => mean + (StableVariance.Value * (float) WithinNumberOfStandardDeviations);
+        private float LowerBound => Mean - (StableVariance.Value * (float) WithinNumberOfStandardDeviations);
+        private float UpperBound => Mean + (StableVariance.Value * (float) WithinNumberOfStandardDeviations);
         
         public override bool Check(bool success, Func<string> failureReasonFactory, SourceCodeLocation sourceCodeLocation)
         {
@@ -49,17 +51,23 @@ namespace Assumptions
             // see: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
             void update()
             {
-                count++;
-                var delta = newValue - mean;
-                mean += delta / count;
-                var delta2 = newValue - mean;
+                Count++;
+                var delta = newValue - Mean;
+                Mean += delta / Count;
+                var delta2 = newValue - Mean;
                 m2 += delta * delta2;
+
+                if (Count > cycleAtCount)
+                {
+                    Count /= 2.0f;
+                    m2 /= 2.0f;
+                }
             }
             update();
 
             void reset()
             {
-                count = mean = m2 = 0;
+                Count = Mean = m2 = 0;
             }
 
             // only perform the check if our variance is stable enough
@@ -73,7 +81,7 @@ namespace Assumptions
                 {
                     var currentLower = LowerBound;
                     var msg =
-                        $"Accumulated success probability violation. actual={mean}±{variance} ({currentLower}..{currentUpper}) after {(int) count} iterations.  expected={Probability}, within {WithinNumberOfStandardDeviations} stddevs";
+                        $"Accumulated success probability violation. actual={Mean}±{variance} ({currentLower}..{currentUpper}) after {(int) Count} iterations.  expected={Probability}, within {WithinNumberOfStandardDeviations} stddevs";
                     reset();
                     OnAssumptionFailure.Create(msg, failureReasonFactory(), null, sourceCodeLocation);
                     return false;

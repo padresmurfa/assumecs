@@ -54,19 +54,6 @@ namespace Assumptions
             return Than(expected, explanation);
         }
 
-        public Assumption Is => this;
-        public Assumption Be => this;
-        public Assumption An => this;
-        public Assumption Of => this;
-        public Assumption A => this;
-        public Assumption Been => this;
-        public Assumption Have => this;
-        public Assumption Has => this;
-        public Assumption With => this;
-        public Assumption Which => this;
-        public Assumption The => this;
-        public Assumption It => this;
-
         public Assumption Not
         {
             get
@@ -381,49 +368,91 @@ namespace Assumptions
             return this;
         }
 
-        // Inconceivably is just a synonym for Probably, which is more appropriate to use grammatically if the probability
-        // is roughly 0%.
-        public Assumption Inconceivably(
-            float probability,
-            int minimumSampleSize,
-            int withinNumberOfStandardDeviations = 1)
-            => Probably(probability, minimumSampleSize, withinNumberOfStandardDeviations);
+        public Assumption Leaks(string explanation = null, int? threshold = null, int? iterations = null) => Leak(explanation, threshold, iterations);
 
-        // Sometimes is just a synonym for Probably, which is more appropriate to use grammatically if the probability
-        // is perhaps 10-75%.  The linguistic difference between sometimes and occasionally seems to be that sometimes
-        // may imply that there is perhaps some sort of a pattern to at what times this would occur.
-        public Assumption Sometimes(
-            float probability,
-            int minimumSampleSize,
-            int withinNumberOfStandardDeviations = 1)
-            => Probably(probability, minimumSampleSize, withinNumberOfStandardDeviations);
+        public Assumption Leak(string explanation = null, int? threshold = null, int? iterations = null)
+        {
+            var inverted = this.CloseExpression();
 
-        // Occasionally is just a synonym for Probably, which is more appropriate to use grammatically if the probability
-        // is perhaps 5-50%.  The linguistic difference between sometimes and occasionally seems to be that sometimes
-        // may imply that there is perhaps some sort of a pattern to at what times this would occur.
-        public Assumption Occasionally(
-            float probability,
-            int minimumSampleSize,
-            int withinNumberOfStandardDeviations = 1)
-            => Probably(probability, minimumSampleSize, withinNumberOfStandardDeviations);
+            Expression = (expected, actual, usualityFailure) =>
+            {
+                Assume.That(actual).Is.InstanceOf(typeof(Action));
+
+                if (inverted)
+                {
+                    // i.e. the normal case, we expect not to leak memory
+                    try
+                    {
+                        LeakDetector.Detect((Action)actual, threshold, iterations);
+                    }
+                    catch (MemoryLeakDetected e)
+                    {
+                        OnAssumptionFailure.Create("Did not expect lambda to leak memory",
+                            this.Explanation, e, this._sourceCodeLocation);
+                    }
+                }
+                else
+                {
+                    // i.e. we expect to actually leak memory
+                    try
+                    {
+                        LeakDetector.Detect((Action)actual, threshold, iterations);
+                        
+                        OnAssumptionFailure.Create(
+                            "Expected lambda to leak memory", this.Explanation,
+                            null, this._sourceCodeLocation);
+                    }
+                    catch (MemoryLeakDetected)
+                    {
+                    }
+                }
+                return null;
+            };
+
+            this.To(null, explanation);
+
+            return this;
+        }
         
         // Certainly is just a synonym for Probably, which is more appropriate to use grammatically if the probability
         // is roughly 100%.
         public Assumption Certainly(
-            float probability,
             int minimumSampleSize,
             int withinNumberOfStandardDeviations = 1)
-            => Probably(probability, minimumSampleSize, withinNumberOfStandardDeviations);
+            => Probably(0.99f, minimumSampleSize, withinNumberOfStandardDeviations);
+
+        // CertainlyNot is a synonym for Probably, given a near-zero probability and, joined with inverting the condition.
+        public Assumption CertainlyNot(
+            int minimumSampleSize,
+            int withinNumberOfStandardDeviations = 1)
+        {
+            return Not.Probably(0.01f, minimumSampleSize, withinNumberOfStandardDeviations);
+        }
 
         public Assumption Probably(
             float probability,
             int minimumSampleSize,
             int withinNumberOfStandardDeviations = 1)
         {
-            var f = new AccumulatedProbabilityFunc
+            var f = new OnlineMeanProbabilityFunc
             {
                 MinimumSampleSize = minimumSampleSize,
                 Probability = probability,
+                WithinNumberOfStandardDeviations = withinNumberOfStandardDeviations
+            };
+
+            return Usually(f);
+        }
+        
+        public Assumption Consistently(
+            int minimumSampleSize,
+            int? consistencyDistance = null,
+            int withinNumberOfStandardDeviations = 1)
+        {
+            var f = new ConsistentOverRecentSamplesProbabilityFunc
+            {
+                MinimumSampleSize = minimumSampleSize,
+                ConsistencyDistance = consistencyDistance ?? minimumSampleSize,
                 WithinNumberOfStandardDeviations = withinNumberOfStandardDeviations
             };
 
@@ -444,6 +473,25 @@ namespace Assumptions
         }
     }
 
+    // No-op linguistic sugar
+    public partial class Assumption
+    {
+        public Assumption Does => this;
+        public Assumption Is => this;
+        public Assumption Be => this;
+        public Assumption An => this;
+        public Assumption Of => this;
+        public Assumption A => this;
+        public Assumption Been => this;
+        public Assumption Have => this;
+        public Assumption Has => this;
+        public Assumption With => this;
+        public Assumption Which => this;
+        public Assumption The => this;
+        public Assumption It => this;
+    }
+
+    // INTERNALS
     public partial class Assumption
     {
         public Assumption(object actual, SourceCodeLocation sourceCodeLocation)
@@ -452,8 +500,6 @@ namespace Assumptions
 
             this._sourceCodeLocation = sourceCodeLocation;
         }
-
-        // INTERNALS
 
         private SourceCodeLocation _sourceCodeLocation;
 
