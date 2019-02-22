@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Assumptions.Uncertainty;
 
 namespace Assumptions
 {
@@ -383,9 +384,9 @@ namespace Assumptions
                     // i.e. the normal case, we expect not to leak memory
                     try
                     {
-                        LeakDetector.Detect((Action)actual, threshold, iterations);
+                        Memory.LeakDetector.Detect((Action)actual, threshold, iterations);
                     }
-                    catch (MemoryLeakDetected e)
+                    catch (Memory.MemoryLeakDetected e)
                     {
                         OnAssumptionFailure.Create("Did not expect lambda to leak memory",
                             this.Explanation, e, this._sourceCodeLocation);
@@ -396,13 +397,13 @@ namespace Assumptions
                     // i.e. we expect to actually leak memory
                     try
                     {
-                        LeakDetector.Detect((Action)actual, threshold, iterations);
+                        Memory.LeakDetector.Detect((Action)actual, threshold, iterations);
                         
                         OnAssumptionFailure.Create(
                             "Expected lambda to leak memory", this.Explanation,
                             null, this._sourceCodeLocation);
                     }
-                    catch (MemoryLeakDetected)
+                    catch (Memory.MemoryLeakDetected)
                     {
                     }
                 }

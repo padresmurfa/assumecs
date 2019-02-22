@@ -1,6 +1,6 @@
 using System;
 
-namespace Assumptions
+namespace Assumptions.Memory
 {
     public class Other : ISuspendOtherThreads
     {

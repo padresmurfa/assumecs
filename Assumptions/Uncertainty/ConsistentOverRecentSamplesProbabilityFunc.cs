@@ -1,6 +1,6 @@
 using System;
 
-namespace Assumptions
+namespace Assumptions.Uncertainty
 {
     public class ConsistentOverRecentSamplesProbabilityFunc : ProbabiltyFunc
     {
@@ -36,11 +36,6 @@ namespace Assumptions
                 ActualProbabilityFunc.Probability = ForeRunner.Mean;
 
                 ActualProbabilityFunc.Check(success, () => null, sourceCodeLocation);
-            }
-
-            if (0 == ((int) ForeRunner.Count) % 100)
-            {
-                var i = 1;
             }
 
             return ForeRunner.Check(success, failureReasonFactory, sourceCodeLocation);

@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Assumptions
+namespace Assumptions.Memory
 {
     public static class LeakDetector
     {

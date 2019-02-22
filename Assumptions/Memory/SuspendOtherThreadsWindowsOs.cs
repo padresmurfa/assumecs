@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
 
-namespace Assumptions
+namespace Assumptions.Memory
 {
     public class SuspendOtherThreadsWindowsOs : ISuspendOtherThreads
     {
@@ -43,7 +43,7 @@ namespace Assumptions
                 if (hThread != null)
                 {
                     // TODO: check for state, only suspend if we then will want to resume....
-                    if (0xFFFFFFFF != SuspendThread(hThread))
+                    if (UInt32.MaxValue != (UInt32)SuspendThread(hThread))
                     {
                         resume.Add(hThread);
                     }

@@ -763,6 +763,7 @@ namespace UnitTests
         public void CanDeclareThatSomethingObeysATemporarySpatialConstraint()
         {
             i.e. the amount of "memory pressure" that the code applies.
+            the actual memory delta, used by the leak detector.
             
             Assume.That(()={
                 var v = new byte[100000];

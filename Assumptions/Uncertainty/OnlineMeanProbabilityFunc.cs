@@ -1,7 +1,6 @@
 using System;
-using Assumptions;
 
-namespace Assumptions
+namespace Assumptions.Uncertainty
 {
     public class OnlineMeanProbabilityFunc : ProbabiltyFunc
     {

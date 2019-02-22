@@ -1,6 +1,4 @@
-using System;
-
-namespace Assumptions
+namespace Assumptions.Uncertainty
 {
     internal class UsualityDeclaration
     {

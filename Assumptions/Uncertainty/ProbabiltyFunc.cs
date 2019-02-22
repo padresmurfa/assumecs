@@ -1,6 +1,6 @@
 using System;
 
-namespace Assumptions
+namespace Assumptions.Uncertainty
 {
     public abstract class ProbabiltyFunc
     {
