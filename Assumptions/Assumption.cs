@@ -1,7 +1,6 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using Assumptions.Memory;
 using Assumptions.Uncertainty;
 
 namespace Assumptions
@@ -445,12 +444,36 @@ namespace Assumptions
 
             return this;
         }
+
+        public Assumption Complete => Completes;
+
+        public Assumption Completes
+        {
+            get
+            {
+                TransformActual = (actual) =>
+                {
+                    var action = (Action) this.Actual;
+                    
+                    var sw = Stopwatch.StartNew();
+                    
+                    action();
+                    
+                    sw.Stop();
+
+                    return sw.Elapsed;
+                };
+                    
+                return this;
+            }
+        }
     }
 
     // No-op linguistic sugar
     public partial class Assumption
     {
         public Assumption Does => this;
+        public Assumption In => this;
         public Assumption Is => this;
         public Assumption Be => this;
         public Assumption An => this;

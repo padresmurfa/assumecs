@@ -1,17 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
-using System.Linq;
-using System.Runtime.ConstrainedExecution;
-using System.Security;
 using Xunit;
 using Assumptions;
-using Assumptions.Memory;
-using Microsoft.DotNet.PlatformAbstractions;
 
 namespace UnitTests
 {
@@ -679,44 +670,21 @@ namespace UnitTests
         }
 
         [Fact]
-        public void CanDetectMemoryLeak()
+        public void CanDeclareThatSomethingObeysATemporalConstraint()
         {
             Assume.That(() =>
             {
-                var g = new {i = 0};
-            }).Does.Not.Leak();
-
-            var leak = new List<object>();
+                Thread.Sleep(20);
+            }).Completes.In.LessThanOrEqual.To( TimeSpan.FromMilliseconds(100) );
+            
             Assume.That(() =>
             {
-                leak.Add(new {i = 0});
-            }).Leaks();
-        }
-        
-        [Fact]
-        public void CanDetectMemoryAllocations()
-        {
-            Assume.That(() =>
-            {
-                var g = new {i = 0};
-            }).Allocates.LessThanOrEqual.To( RAM.FromBytes(100L) );
-
-            var leak = new List<object>();
-            Assume.That(() =>
-            {
-                for (var i = 0; i < 10000; i++)
-                {
-                    leak.Add(new {i = 0});
-                }
-            }).Allocates.More.Than( RAM.FromBytes(1000L) );
+                Thread.Sleep(100);
+            }).Does.Not.Complete.In.LessThanOrEqual.To( TimeSpan.FromMilliseconds(20) );
         }
         
         /*
          
-            // TODO: "allocates" is a resource usage assumption.  It can also apply to "takes less than 10 seconds",
-            //       or some other such measure.  Uses less than 2 cpu seconds, sends less than 200 bytes of data,
-            //       etc.
-            
          assume consistent 
          * persistent storage to determine relationship between tests, or just over time
          
@@ -763,22 +731,7 @@ namespace UnitTests
             // determine the distance between samples to compare.
             // may also want to use a persistent store here.
         }
-                 
-        [Fact]
-        public void CanDeclareThatSomethingObeysATemporalConstraint()
-        {
-            Assume.That(()=>{
-                Thread.Sleep(10000);
-            }).Completes.In.Less.Than(TimeSpan.FromSeconds(3));
-        }
 
-        [Fact]
-        public void CanDeclareThatSomethingObeysATemporalConstraint()
-        {
-            Assume.That(()=>{
-                Thread.Sleep(10000);
-            }).Completes.Using.Less.Than(Resources.CPU(TimeSpan.FromMilliseconds(500)));
-        }
         */
 
         /*
