@@ -10,6 +10,7 @@ using System.Runtime.ConstrainedExecution;
 using System.Security;
 using Xunit;
 using Assumptions;
+using Assumptions.Memory;
 using Microsoft.DotNet.PlatformAbstractions;
 
 namespace UnitTests
@@ -691,9 +692,31 @@ namespace UnitTests
                 leak.Add(new {i = 0});
             }).Leaks();
         }
+        
+        [Fact]
+        public void CanDetectMemoryAllocations()
+        {
+            Assume.That(() =>
+            {
+                var g = new {i = 0};
+            }).Allocates.LessThanOrEqual.To( RAM.FromBytes(100L) );
 
+            var leak = new List<object>();
+            Assume.That(() =>
+            {
+                for (var i = 0; i < 10000; i++)
+                {
+                    leak.Add(new {i = 0});
+                }
+            }).Allocates.More.Than( RAM.FromBytes(1000L) );
+        }
+        
         /*
          
+            // TODO: "allocates" is a resource usage assumption.  It can also apply to "takes less than 10 seconds",
+            //       or some other such measure.  Uses less than 2 cpu seconds, sends less than 200 bytes of data,
+            //       etc.
+            
          assume consistent 
          * persistent storage to determine relationship between tests, or just over time
          
@@ -759,44 +782,33 @@ namespace UnitTests
         */
 
         /*
-        [Fact]
-        public void CanDeclareThatSomethingObeysATemporarySpatialConstraint()
-        {
-            i.e. the amount of "memory pressure" that the code applies.
-            the actual memory delta, used by the leak detector.
-            
-            Assume.That(()={
-                var v = new byte[100000];
-            }).Completes.Allocating.Less.Than(Resources.RAM.Kilobytes(80));
-        }
         
         
         
 public static class CodeFirst
 {
-        public string GetTestMethodName()
+    public string GetTestMethodName()
+    {
+        try
         {
-            try
+            // for when it runs via TeamCity
+            return TestContext.CurrentContext.Test.Name;
+        }
+        catch
+        {
+            // for when it runs via Visual Studio locally
+            var stackTrace = new StackTrace(); 
+            foreach (var stackFrame in stackTrace.GetFrames())
             {
-                // for when it runs via TeamCity
-                return TestContext.CurrentContext.Test.Name;
-            }
-            catch
-            {
-                // for when it runs via Visual Studio locally
-                var stackTrace = new StackTrace(); 
-                foreach (var stackFrame in stackTrace.GetFrames())
+                MethodBase methodBase = stackFrame.GetMethod();
+                Object[] attributes = methodBase.GetCustomAttributes(
+                                          typeof(TestAttribute), false); 
+                if (attributes.Length >= 1)
                 {
-                    MethodBase methodBase = stackFrame.GetMethod();
-                    Object[] attributes = methodBase.GetCustomAttributes(
-                                              typeof(TestAttribute), false); 
-                    if (attributes.Length >= 1)
-                    {
-                        return methodBase.Name;
-                    }
+                    return methodBase.Name;
                 }
-                return "Not called from a test method";  
             }
+            return "Not called from a test method";  
         }
     }
 

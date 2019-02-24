@@ -5,9 +5,9 @@ namespace Assumptions.Memory
 {
     public static class LeakDetector
     {
-        public static int DefaultThreshold = 88;
+        public static RAM DefaultThreshold = RAM.FromBytes(88);
         
-        public static int DefaultIterations = 1000;
+        public static int DefaultLeakDetectionIterations = 1000;
 
         private static ISuspendOtherThreads Suspender {
             get
@@ -43,14 +43,13 @@ namespace Assumptions.Memory
             }
         }
         
-        
 
-        public static void Detect(Action action, int? threshold = null, int? iterations = null)
+        public static Allocations DetectAllocations(Action action, int? iterations = null)
         {
-            var someIterations = iterations ?? DefaultIterations;
-            var someThreshold = threshold ?? DefaultThreshold;
+            var someIterations = iterations ?? 1;
             
-            var resume = Suspender.Suspend();
+            var suspender = (iterations == 1) ? new Other() : Suspender;
+            var resume = suspender.Suspend();
             try
             {
                 var before = GarbageCollectAndGetTotalMemory();
@@ -62,22 +61,32 @@ namespace Assumptions.Memory
             
                 var after = GarbageCollectAndGetTotalMemory();
 
-                var delta = after - before;
-
-                if (delta > someThreshold)
+                return new Allocations
                 {
-                    throw new MemoryLeakDetected
-                    {
-                        Iterations = someIterations,
-                        Threshold = someThreshold,
-                        Before = before,
-                        After = after
-                    };
-                }
+                    Iterations = someIterations,
+                    Before = before,
+                    After = after
+                };
             }
             finally
             {
                 resume();
+            }
+        }        
+
+        public static void DetectLeaks(Action action, RAM threshold = null, int? iterations = null)
+        {
+            var someThreshold = threshold ?? DefaultThreshold;
+
+            var allocations = DetectAllocations(action, iterations);
+            
+            if (allocations.Delta > someThreshold)
+            {
+                throw new MemoryLeakDetected
+                {
+                    Threshold = someThreshold,
+                    Allocations = allocations
+                };
             }
         }
     }

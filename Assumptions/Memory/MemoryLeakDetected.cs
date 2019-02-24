@@ -2,19 +2,21 @@ using System;
 
 namespace Assumptions.Memory
 {
-    public class MemoryLeakDetected : Exception
+    public class Allocations
     {
         public int Iterations;
+        
+        public RAM Before;
             
-        public long Threshold;
+        public RAM After;
             
-        public long Before;
-            
-        public long After;
-            
-        public long Delta
-        {
-            get => After - Before;
-        }
+        public RAM Delta => After - Before;
+    }
+
+    public class MemoryLeakDetected : Exception
+    {
+        public RAM Threshold;
+
+        public Allocations Allocations;
     }
 }

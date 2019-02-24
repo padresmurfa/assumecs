@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Assumptions.Memory;
 using Assumptions.Uncertainty;
 
 namespace Assumptions
@@ -9,31 +10,6 @@ namespace Assumptions
     {
         public Assumption Than(object expected, string explanation = null)
         {
-            void Evaluate()
-            {
-                var failureReasonFactory = this.Expression(this.Expected, this.Actual, false);
-
-                var success = failureReasonFactory == null;
-
-                if (Usuality != null)
-                {
-                    var usalityFailedReasonFactory =
-                        failureReasonFactory ?? this.Expression(this.Expected, this.Actual, true);
-                    var isUsuallyTrue = Usuality.Probability.Check(success, usalityFailedReasonFactory, this._sourceCodeLocation);
-                    if (!success)
-                    {
-                        success = isUsuallyTrue;
-                    }
-                }
-
-                if (!success)
-                {
-                    var failureReason = failureReasonFactory();
-                    OnAssumptionFailure.Create(failureReason, this.Explanation, null, this._sourceCodeLocation);
-                    return;
-                }
-            }
-
             if (isInvertedAssumption)
             {
                 throw new BadGrammar("Not must be specified before a logical operator, not before a terminator");
@@ -43,10 +19,53 @@ namespace Assumptions
 
             Explanation = explanation;
 
-            VerifyAssumptionIntegrity();
+            var actual = this.Actual;
+                
+            if (this.TransformActual != null || this.TransformExpected != null)
+            {
+                if (this.TransformActual != null)
+                {
+                    actual = this.TransformActual(this.Actual);
+                }
 
-            Evaluate();
+                if (this.TransformExpected != null)
+                {
+                    expected = this.TransformExpected(this.Expected);
+                }
+            }
+                
+            if (this.isEquatable)
+            {
+                VerifyAssumptionIntegrityEquatability(actual, expected);
+            }
+                
+            if (this.isComparable)
+            {
+                VerifyAssumptionIntegrityComparability(actual, expected);
+            }
 
+            var failureReasonFactory = this.Expression(expected, actual, false);
+
+            var success = failureReasonFactory == null;
+
+            if (Usuality != null)
+            {
+                var usualityFailedReasonFactory =
+                    failureReasonFactory ?? this.Expression(expected, actual, true);
+                var isUsuallyTrue = Usuality.Probability.Check(success, usualityFailedReasonFactory, this._sourceCodeLocation);
+                if (!success)
+                {
+                    success = isUsuallyTrue;
+                }
+            }
+
+            if (!success)
+            {
+                var failureReason = failureReasonFactory();
+                OnAssumptionFailure.Create(failureReason, this.Explanation, null, this._sourceCodeLocation);
+                return this;
+            }
+            
             return this;
         }
 
@@ -367,54 +386,8 @@ namespace Assumptions
             this.To(null, explanation);
 
             return this;
-        }
+        }        
 
-        public Assumption Leaks(string explanation = null, int? threshold = null, int? iterations = null) => Leak(explanation, threshold, iterations);
-
-        public Assumption Leak(string explanation = null, int? threshold = null, int? iterations = null)
-        {
-            var inverted = this.CloseExpression();
-
-            Expression = (expected, actual, usualityFailure) =>
-            {
-                Assume.That(actual).Is.InstanceOf(typeof(Action));
-
-                if (inverted)
-                {
-                    // i.e. the normal case, we expect not to leak memory
-                    try
-                    {
-                        Memory.LeakDetector.Detect((Action)actual, threshold, iterations);
-                    }
-                    catch (Memory.MemoryLeakDetected e)
-                    {
-                        OnAssumptionFailure.Create("Did not expect lambda to leak memory",
-                            this.Explanation, e, this._sourceCodeLocation);
-                    }
-                }
-                else
-                {
-                    // i.e. we expect to actually leak memory
-                    try
-                    {
-                        Memory.LeakDetector.Detect((Action)actual, threshold, iterations);
-                        
-                        OnAssumptionFailure.Create(
-                            "Expected lambda to leak memory", this.Explanation,
-                            null, this._sourceCodeLocation);
-                    }
-                    catch (Memory.MemoryLeakDetected)
-                    {
-                    }
-                }
-                return null;
-            };
-
-            this.To(null, explanation);
-
-            return this;
-        }
-        
         // Certainly is just a synonym for Probably, which is more appropriate to use grammatically if the probability
         // is roughly 100%.
         public Assumption Certainly(
@@ -490,6 +463,9 @@ namespace Assumptions
         public Assumption Which => this;
         public Assumption The => this;
         public Assumption It => this;
+
+        public Assumption More => Greater;
+        public Assumption AtLeast => GreaterThanOrEqual;
     }
 
     // INTERNALS
@@ -506,6 +482,9 @@ namespace Assumptions
 
         private object Actual;
         private object Expected;
+
+        private Func<object, object> TransformActual;
+        private Func<object, object> TransformExpected;
         
         private string Explanation;
 
@@ -547,15 +526,13 @@ namespace Assumptions
             if (comparable)
             {
                 this.isComparable = true;
-                VerifyAssumptionIntegrity();
             }
             
             if (equatable)
             {
                 this.isEquatable = true;
-                VerifyAssumptionIntegrity();
             }
-            
+
             isExpressionClosed = true;
             
             var inverted = this.isInvertedAssumption;
@@ -563,46 +540,40 @@ namespace Assumptions
             return inverted;
         }
 
-        private void VerifyAssumptionIntegrity()
+        private void VerifyAssumptionIntegrityEquatability(object actual, object expected)
         {
-            void VerifyAssumptionIntegrityEquatability()
+            if (this.isEquatable)
             {
-                if (this.isEquatable)
+                if (actual != null && !Equatable(actual))
                 {
-                    if (this.Actual != null && !Equatable(this.Actual))
-                    {
-                        OnAssumptionFailure.Create("'actual value' must be equatable", this.Explanation, null, this._sourceCodeLocation);
-                        return;
-                    }
-                    if (this.Expected != null && !Equatable(this.Expected))
-                    {
-                        OnAssumptionFailure.Create("'expected value' must be equatable", this.Explanation, null, this._sourceCodeLocation);
-                        return;
-                    }
+                    OnAssumptionFailure.Create("'actual value' must be equatable", this.Explanation, null, this._sourceCodeLocation);
+                    return;
+                }
+                if (expected != null && !Equatable(expected))
+                {
+                    OnAssumptionFailure.Create("'expected value' must be equatable", this.Explanation, null, this._sourceCodeLocation);
+                    return;
                 }
             }
-    
-            void VerifyAssumptionIntegrityComparability()
-            {
-                if (this.isComparable)
-                {
-                    if (this.Actual != null && !Comparable(this.Actual))
-                    {
-                        OnAssumptionFailure.Create("'actual value' must be comparable", this.Explanation, null, this._sourceCodeLocation);
-                        return;
-                    }
-                    if (this.Expected != null && !Comparable(this.Expected))
-                    {
-                        OnAssumptionFailure.Create("'expected value' must be comparable", this.Explanation, null, this._sourceCodeLocation);
-                        return;
-                    }
-                }
-            }
-        
-            VerifyAssumptionIntegrityComparability();
-            VerifyAssumptionIntegrityEquatability();
         }
 
+        private void VerifyAssumptionIntegrityComparability(object actual, object expected)
+        {
+            if (this.isComparable)
+            {
+                if (actual != null && !Comparable(actual))
+                {
+                    OnAssumptionFailure.Create("'actual value' must be comparable", this.Explanation, null, this._sourceCodeLocation);
+                    return;
+                }
+                if (expected != null && !Comparable(expected))
+                {
+                    OnAssumptionFailure.Create("'expected value' must be comparable", this.Explanation, null, this._sourceCodeLocation);
+                    return;
+                }
+            }
+        }
+        
         private bool Comparable(object o)
         {
             return (o != null) && (o is IComparable);
